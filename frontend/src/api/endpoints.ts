@@ -58,6 +58,11 @@ import type {
   StaffSalaryUpdate,
   StockAgingItem,
   StockLevelDetail,
+  Tenant,
+  TenantCreate,
+  TenantUpdate,
+  TenantUsage,
+  AuditLogEntry,
   TestResult,
   Transfer,
   Vendor,
@@ -372,3 +377,20 @@ export const generatePayslips = (data: PayslipGenerate) =>
   apiClient.post<Payslip[]>("/api/payroll/payslips/generate", data);
 export const updatePayslip = (id: number, data: PayslipUpdate) =>
   apiClient.patch<Payslip>(`/api/payroll/payslips/${id}`, data);
+
+// ---- Super Admin ----
+export const listTenants = (q?: string) => apiClient.get<Tenant[]>("/api/admin/tenants", { params: { q } });
+export const createTenant = (data: TenantCreate) => apiClient.post<Tenant>("/api/admin/tenants", data);
+export const getTenant = (id: number) => apiClient.get<Tenant>(`/api/admin/tenants/${id}`);
+export const updateTenant = (id: number, data: TenantUpdate) =>
+  apiClient.patch<Tenant>(`/api/admin/tenants/${id}`, data);
+export const suspendTenant = (id: number) => apiClient.post<Tenant>(`/api/admin/tenants/${id}/suspend`);
+export const deleteTenant = (id: number) => apiClient.delete<Tenant>(`/api/admin/tenants/${id}`);
+export const getTenantUsage = (id: number) => apiClient.get<TenantUsage>(`/api/admin/tenants/${id}/usage`);
+export const getTenantActivity = (id: number, limit = 100) =>
+  apiClient.get<AuditLogEntry[]>(`/api/admin/tenants/${id}/activity`, { params: { limit } });
+export const listTenantUsers = (id: number) => apiClient.get<AppUser[]>(`/api/admin/tenants/${id}/users`);
+export const resetTenantUserPassword = (tenantId: number, userId: number, new_password: string) =>
+  apiClient.post<{ ok: boolean }>(`/api/admin/tenants/${tenantId}/users/${userId}/reset-password`, {
+    new_password,
+  });

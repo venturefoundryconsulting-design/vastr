@@ -79,8 +79,10 @@ export default function Login() {
   const doLogin = async (email: string, password: string) => {
     setLoading(true);
     try {
-      await login(email, password);
-      navigate("/");
+      const user = await login(email, password);
+      // Super Admins aren't a member of any tenant (see backend User.tenant_id)
+      // - the tenant dashboard would just show them empty data.
+      navigate((user.role as string) === "super_admin" ? "/platform-admin/tenants" : "/dashboard");
     } catch {
       message.error("Invalid email or password");
     } finally {

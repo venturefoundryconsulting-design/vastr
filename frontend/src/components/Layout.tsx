@@ -46,7 +46,7 @@ interface NavItem {
 const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
   {
     group: "Overview",
-    items: [{ key: "/", icon: <DashboardOutlined />, label: "Dashboard" }],
+    items: [{ key: "/dashboard", icon: <DashboardOutlined />, label: "Dashboard" }],
   },
   {
     group: "Sales",

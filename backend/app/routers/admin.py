@@ -16,6 +16,7 @@ from app.schemas.admin import (
     TenantUpdate,
     TenantUsageOut,
 )
+from app.schemas.user import UserOut
 from app.services.audit import log_activity
 
 # Cross-tenant access for this router is granted by app.middleware.tenant -
@@ -156,6 +157,11 @@ def tenant_usage(tenant_id: int, db: Session = Depends(get_db)):
         product_count=product_count,
         estimated_record_count=user_count + outlet_count + product_count,
     )
+
+
+@router.get("/tenants/{tenant_id}/users", response_model=list[UserOut])
+def list_tenant_users(tenant_id: int, db: Session = Depends(get_db)):
+    return db.query(User).filter(User.tenant_id == tenant_id).order_by(User.name).all()
 
 
 @router.post("/tenants/{tenant_id}/users/{user_id}/reset-password", response_model=dict)

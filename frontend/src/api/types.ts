@@ -821,3 +821,69 @@ export interface PayslipUpdate {
   deductions?: number;
   status?: PayslipStatus;
 }
+
+// ---- Super Admin ----
+export type SubscriptionPlanName = "free" | "starter" | "professional" | "enterprise";
+export type SubscriptionStatus = "trial" | "active" | "suspended" | "cancelled";
+
+export interface Tenant {
+  id: number;
+  company_name: string;
+  slug: string;
+  logo?: string | null;
+  primary_color?: string | null;
+  timezone: string;
+  currency: string;
+  country?: string | null;
+  subscription_plan: SubscriptionPlanName;
+  subscription_status: SubscriptionStatus;
+  trial_end?: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface TenantCreate {
+  company_name: string;
+  slug: string;
+  primary_color?: string | null;
+  timezone?: string;
+  currency?: string;
+  country?: string | null;
+  subscription_plan?: SubscriptionPlanName;
+  trial_end?: string | null;
+  owner_name: string;
+  owner_email: string;
+  owner_password: string;
+}
+
+export interface TenantUpdate {
+  company_name?: string;
+  primary_color?: string | null;
+  timezone?: string;
+  currency?: string;
+  country?: string | null;
+  subscription_plan?: SubscriptionPlanName;
+  subscription_status?: SubscriptionStatus;
+  trial_end?: string | null;
+  is_active?: boolean;
+}
+
+export interface TenantUsage {
+  tenant_id: number;
+  user_count: number;
+  active_user_count: number;
+  outlet_count: number;
+  product_count: number;
+  estimated_record_count: number;
+}
+
+export interface AuditLogEntry {
+  id: number;
+  tenant_id?: number | null;
+  user_id?: number | null;
+  action: string;
+  entity_type?: string | null;
+  entity_id?: number | null;
+  details?: Record<string, unknown> | null;
+  created_at: string;
+}

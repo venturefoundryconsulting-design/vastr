@@ -5,7 +5,7 @@ import type { CurrentUser } from "../api/types";
 interface AuthContextValue {
   user: CurrentUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<CurrentUser>;
   logout: () => void;
 }
 
@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("access_token", res.data.access_token);
     const me = await getMe();
     setUser(me.data);
+    return me.data;
   };
 
   const logout = () => {

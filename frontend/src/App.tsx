@@ -1,8 +1,9 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import RequireAuth from "./components/RequireAuth";
 import ScrollToTop from "./components/ScrollToTop";
 import type { UserRole } from "./api/types";
+import { useAuth } from "./context/AuthContext";
 import Alterations from "./pages/Alterations";
 import Campaigns from "./pages/Campaigns";
 import Customers from "./pages/Customers";
@@ -10,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Discounts from "./pages/Discounts";
 import HRM from "./pages/HRM";
 import Inventory from "./pages/Inventory";
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Outlets from "./pages/Outlets";
 import Payroll from "./pages/Payroll";
@@ -25,6 +27,10 @@ import TransferDetail from "./pages/TransferDetail";
 import Transfers from "./pages/Transfers";
 import Users from "./pages/Users";
 import Vendors from "./pages/Vendors";
+import RequireSuperAdmin from "./admin/RequireSuperAdmin";
+import SuperAdminLayout from "./admin/SuperAdminLayout";
+import TenantDetail from "./admin/TenantDetail";
+import TenantsList from "./admin/TenantsList";
 
 function Protected({ children, minRole }: { children: React.ReactNode; minRole?: UserRole }) {
   return (
@@ -34,13 +40,38 @@ function Protected({ children, minRole }: { children: React.ReactNode; minRole?:
   );
 }
 
+function PlatformAdmin({ children }: { children: React.ReactNode }) {
+  return (
+    <RequireSuperAdmin>
+      <SuperAdminLayout>{children}</SuperAdminLayout>
+    </RequireSuperAdmin>
+  );
+}
+
+/** Public landing page for guests; already-authenticated visitors skip
+ * straight to their dashboard rather than seeing marketing copy again. */
+function Root() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return user ? <Navigate to="/dashboard" replace /> : <Landing />;
+}
+
 export default function App() {
   return (
     <>
       <ScrollToTop />
       <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/" element={<Protected><Dashboard /></Protected>} />
+      <Route path="/" element={<Root />} />
+      <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+      <Route
+        path="/platform-admin/tenants"
+        element={<PlatformAdmin><TenantsList /></PlatformAdmin>}
+      />
+      <Route
+        path="/platform-admin/tenants/:id"
+        element={<PlatformAdmin><TenantDetail /></PlatformAdmin>}
+      />
       <Route path="/pos" element={<Protected><POS /></Protected>} />
       <Route path="/sales" element={<Protected><Sales /></Protected>} />
       <Route path="/returns" element={<Protected><Returns /></Protected>} />
