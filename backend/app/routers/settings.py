@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db, require_admin
 from app.core.config import settings as env_settings
 from app.models.settings import AppSettings
+from app.models.tenant import Tenant
 from app.models.user import User
 from app.schemas.settings import AppSettingsOut, AppSettingsUpdate, PublicBrandingOut
 from app.services.app_settings import get_app_settings
@@ -29,6 +30,7 @@ def _to_out(s: AppSettings) -> AppSettingsOut:
         invoice_footer_text=s.invoice_footer_text,
         show_hsn_on_documents=s.show_hsn_on_documents,
         logo_url=s.logo_url,
+        invoice_prefix=s.invoice_prefix,
         whatsapp_phone_number_id=s.whatsapp_phone_number_id,
         whatsapp_api_version=s.whatsapp_api_version,
         whatsapp_token_set=bool(s.whatsapp_cloud_api_token),
@@ -105,4 +107,9 @@ def remove_logo(db: Session = Depends(get_db)):
 @public_router.get("/public", response_model=PublicBrandingOut)
 def get_public_branding(db: Session = Depends(get_db)):
     s = get_app_settings(db)
-    return PublicBrandingOut(business_name=s.business_name, logo_url=s.logo_url)
+    tenant = db.get(Tenant, s.tenant_id)
+    return PublicBrandingOut(
+        business_name=s.business_name,
+        logo_url=s.logo_url,
+        primary_color=tenant.primary_color if tenant else None,
+    )

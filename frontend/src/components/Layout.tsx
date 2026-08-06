@@ -27,7 +27,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getPublicBranding } from "../api/endpoints";
 import { useAuth } from "../context/AuthContext";
-import { BRAND } from "../theme";
 import type { UserRole } from "../api/types";
 import { hasMinRole } from "../utils/roles";
 
@@ -180,7 +179,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [navOrder, setNavOrder] = useState<{ key: string; visible: boolean }[] | null>(loadNavOrder);
   const {
-    token: { colorBgContainer },
+    token: { colorBgContainer, colorPrimary },
   } = theme.useToken();
   const { data: branding } = useQuery({
     queryKey: ["public-branding"],
@@ -254,7 +253,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 height: 34,
                 minWidth: 34,
                 borderRadius: 10,
-                background: `linear-gradient(135deg, ${BRAND}, #c2185b)`,
+                background: `linear-gradient(135deg, ${colorPrimary}, #c2185b)`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -331,7 +330,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <Avatar style={{ background: BRAND }}>{user?.name?.[0]?.toUpperCase()}</Avatar>
+                <Avatar style={{ background: colorPrimary }}>{user?.name?.[0]?.toUpperCase()}</Avatar>
                 {!isMobile && <span>{user?.name}</span>}
               </div>
             </Dropdown>

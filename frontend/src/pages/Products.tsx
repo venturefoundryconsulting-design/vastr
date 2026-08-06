@@ -52,6 +52,7 @@ import {
 } from "../api/endpoints";
 import type { BulkImportResult, ImageAngle, Product, ProductImage } from "../api/types";
 import { useAuth } from "../context/AuthContext";
+import { hasMinRole } from "../utils/roles";
 import ExportButton from "../components/ExportButton";
 
 const ANGLE_OPTIONS: { value: ImageAngle; label: string }[] = [
@@ -490,7 +491,7 @@ export default function Products() {
             style={{ width: 240 }}
           />
           <ExportButton url="/api/products/export" params={{ search }} filenameBase="products" />
-          {user?.role !== "outlet_staff" && (
+          {hasMinRole(user?.role, "manager") && (
             <Button icon={<ImportOutlined />} onClick={() => setImportModalOpen(true)}>
               Bulk Import
             </Button>

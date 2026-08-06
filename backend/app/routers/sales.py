@@ -303,8 +303,10 @@ def checkout(payload: SaleCreate, db: Session = Depends(get_db), user: User = De
             discount_rule = db.get(DiscountRule, result.rule_id)
             rule_discount_amount = result.discount_amount
 
+    invoice_prefix = get_app_settings(db).invoice_prefix
+
     sale = Sale(
-        invoice_number=next_document_number(db, Sale, Sale.invoice_number, "INV"),
+        invoice_number=next_document_number(db, Sale, Sale.invoice_number, invoice_prefix),
         outlet_id=payload.outlet_id,
         cashier_id=user.id,
         customer_id=payload.customer_id,

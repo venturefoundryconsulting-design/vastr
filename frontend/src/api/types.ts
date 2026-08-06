@@ -1,4 +1,8 @@
-export type UserRole = "admin" | "manager" | "outlet_staff";
+// super_admin is deliberately not part of this type - it's a platform-level
+// role, not a tenant-scoped one, and is checked separately (see
+// admin/RequireSuperAdmin.tsx) rather than through the tenant rank ladder
+// (utils/roles.ts) that this type feeds.
+export type UserRole = "tenant_owner" | "admin" | "manager" | "sales" | "inventory" | "outlet_staff" | "viewer";
 
 export type PaperSize = "a4" | "thermal_58" | "thermal_80";
 
@@ -623,6 +627,7 @@ export interface AppSettings {
 export interface PublicBranding {
   business_name?: string | null;
   logo_url?: string | null;
+  primary_color?: string | null;
 }
 
 export type EmailProviderType = "brevo" | "resend" | "emailjs" | "smtp_generic" | "gmail_smtp" | "outlook_smtp";
@@ -886,4 +891,27 @@ export interface AuditLogEntry {
   entity_id?: number | null;
   details?: Record<string, unknown> | null;
   created_at: string;
+}
+
+// ---- Tenant self-service (the tenant's own users, not Super Admin) ----
+export interface TenantSelf {
+  id: number;
+  company_name: string;
+  slug: string;
+  logo?: string | null;
+  primary_color?: string | null;
+  timezone: string;
+  currency: string;
+  country?: string | null;
+  subscription_plan: SubscriptionPlanName;
+  subscription_status: SubscriptionStatus;
+  trial_end?: string | null;
+}
+
+export interface TenantSelfUpdate {
+  company_name?: string;
+  primary_color?: string | null;
+  timezone?: string;
+  currency?: string;
+  country?: string | null;
 }

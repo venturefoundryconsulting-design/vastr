@@ -3,6 +3,8 @@ import {
   Alert,
   Button,
   Card,
+  ColorPicker,
+  Descriptions,
   Form,
   Input,
   Select,
@@ -16,8 +18,9 @@ import {
   message,
 } from "antd";
 import { DeleteOutlined, UploadOutlined } from "@ant-design/icons";
-import { getAppSettings, listOutlets, removeLogo, updateAppSettings, updateOutlet, uploadLogo } from "../api/endpoints";
+import { getAppSettings, listOutlets, removeLogo, updateAppSettings, updateMyTenant, updateOutlet, uploadLogo } from "../api/endpoints";
 import type { Outlet, PaperSize } from "../api/types";
+import { useTenant } from "../context/TenantContext";
 import EmailIntegrationsSettings from "./settings/EmailIntegrations";
 import HardwareAiSettings from "./settings/HardwareAiSettings";
 import SmsIntegrationsSettings from "./settings/SmsIntegrations";
@@ -236,6 +239,13 @@ function BusinessProfileSettings() {
             <Input.TextArea rows={2} style={{ maxWidth: 420 }} placeholder="e.g. Exchange within 7 days with receipt. Thank you!" />
           </Form.Item>
           <Form.Item
+            name="invoice_prefix"
+            label="Invoice number prefix"
+            tooltip='New sales get numbered like "PREFIX-202608-0001" - change the prefix here.'
+          >
+            <Input placeholder="INV" style={{ width: 140 }} />
+          </Form.Item>
+          <Form.Item
             name="show_hsn_on_documents"
             label="Show HSN code column on printed item tables"
             valuePropName="checked"
@@ -317,6 +327,123 @@ function WhatsAppCloudApiSettings() {
   );
 }
 
+function OrganizationSettings() {
+  const { tenant, loading, refresh, darkMode, setDarkMode } = useTenant();
+  const [form] = Form.useForm();
+
+  const saveMutation = useMutation({
+    mutationFn: updateMyTenant,
+    onSuccess: async () => {
+      message.success("Organization settings saved");
+      await refresh();
+    },
+    onError: (err: any) => message.error(err?.response?.data?.detail || "Failed to save"),
+  });
+
+  if (loading || !tenant) return null;
+
+  return (
+    <div>
+      <Alert
+        type="info"
+        showIcon
+        style={{ marginBottom: 16 }}
+        message="This is separate from your Business Profile"
+        description={
+          "Company name and theme color here control your Velora workspace identity (sidebar, buttons, " +
+          "links). Business Profile (the previous tab) controls what's printed on receipts and purchase " +
+          "orders - the two can differ, e.g. a legal name vs. a storefront brand name."
+        }
+      />
+      <Card style={{ maxWidth: 480, marginBottom: 16 }}>
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={tenant}
+          onFinish={(values) => saveMutation.mutate(values)}
+        >
+          <Form.Item name="company_name" label="Company name">
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="primary_color"
+            label="Theme color"
+            tooltip="Recolors buttons, links, and the sidebar highlight across the whole app."
+            getValueFromEvent={(color) => (typeof color === "string" ? color : color?.toHexString())}
+          >
+            <ColorPicker format="hex" showText />
+          </Form.Item>
+          <Space wrap style={{ width: "100%" }}>
+            <Form.Item name="timezone" label="Timezone" style={{ width: 220 }}>
+              <Input placeholder="Asia/Kolkata" />
+            </Form.Item>
+            <Form.Item name="currency" label="Currency" style={{ width: 120 }}>
+              <Input placeholder="INR" />
+            </Form.Item>
+            <Form.Item name="country" label="Country" style={{ width: 160 }}>
+              <Input placeholder="India" />
+            </Form.Item>
+          </Space>
+          <Button type="primary" htmlType="submit" loading={saveMutation.isPending}>
+            Save
+          </Button>
+        </Form>
+      </Card>
+      <Card title="Dark mode" style={{ maxWidth: 480 }}>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 12 }}>
+          A display preference for this browser only - it isn't shared with other people at your
+          organization or synced across devices.
+        </Typography.Paragraph>
+        <Switch checked={darkMode} onChange={setDarkMode} checkedChildren="Dark" unCheckedChildren="Light" />
+      </Card>
+    </div>
+  );
+}
+
+const PLAN_LABELS: Record<string, string> = {
+  free: "Free",
+  starter: "Starter",
+  professional: "Professional",
+  enterprise: "Enterprise",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  trial: "blue",
+  active: "green",
+  suspended: "orange",
+  cancelled: "red",
+};
+
+function SubscriptionSettings() {
+  const { tenant, loading } = useTenant();
+  if (loading || !tenant) return null;
+
+  return (
+    <Card style={{ maxWidth: 480 }}>
+      <Descriptions
+        column={1}
+        bordered
+        items={[
+          { key: "plan", label: "Plan", children: PLAN_LABELS[tenant.subscription_plan] ?? tenant.subscription_plan },
+          {
+            key: "status",
+            label: "Status",
+            children: <Tag color={STATUS_COLORS[tenant.subscription_status]}>{tenant.subscription_status.toUpperCase()}</Tag>,
+          },
+          {
+            key: "trial_end",
+            label: "Trial ends",
+            children: tenant.trial_end ? new Date(tenant.trial_end).toLocaleDateString() : "—",
+          },
+        ]}
+      />
+      <Typography.Paragraph type="secondary" style={{ marginTop: 16, marginBottom: 0 }}>
+        Billing isn't set up yet - contact your platform administrator to change plans.
+      </Typography.Paragraph>
+    </Card>
+  );
+}
+
 export default function Settings() {
   return (
     <div>
@@ -325,6 +452,8 @@ export default function Settings() {
         defaultActiveKey="business"
         items={[
           { key: "business", label: "Business Profile", children: <BusinessProfileSettings /> },
+          { key: "organization", label: "Organization", children: <OrganizationSettings /> },
+          { key: "subscription", label: "Subscription", children: <SubscriptionSettings /> },
           { key: "printing", label: "Printing", children: <PrintingSettings /> },
           { key: "whatsapp", label: "WhatsApp", children: <WhatsAppCloudApiSettings /> },
           { key: "email-integrations", label: "Email Integrations", children: <EmailIntegrationsSettings /> },

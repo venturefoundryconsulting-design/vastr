@@ -29,6 +29,7 @@ from app.routers import (
     returns,
     sales,
     settings as settings_router,
+    tenant as tenant_router,
     transfers,
     users,
     vendors,
@@ -82,6 +83,7 @@ app.include_router(integrations.router)
 app.include_router(hardware.router)
 app.include_router(hrm.router)
 app.include_router(payroll.router)
+app.include_router(tenant_router.router)
 
 settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")

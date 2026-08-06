@@ -33,6 +33,7 @@ class AppSettings(Base, TimestampMixin, TenantMixin):
     invoice_footer_text: Mapped[str | None] = mapped_column(String(500), default=None)
     show_hsn_on_documents: Mapped[bool] = mapped_column(Boolean, default=False)
     logo_url: Mapped[str | None] = mapped_column(String(500), default=None)
+    invoice_prefix: Mapped[str] = mapped_column(String(10), default="INV")
 
     # WhatsApp Cloud API (falls back to .env values in core.config if unset here)
     whatsapp_cloud_api_token: Mapped[str | None] = mapped_column(String(500), default=None)

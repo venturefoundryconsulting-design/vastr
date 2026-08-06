@@ -10,6 +10,7 @@ class AppSettingsOut(BaseModel):
     invoice_footer_text: str | None = None
     show_hsn_on_documents: bool = False
     logo_url: str | None = None
+    invoice_prefix: str = "INV"
 
     whatsapp_phone_number_id: str | None = None
     whatsapp_api_version: str | None = None
@@ -27,6 +28,7 @@ class AppSettingsUpdate(BaseModel):
     business_email: str | None = None
     invoice_footer_text: str | None = None
     show_hsn_on_documents: bool | None = None
+    invoice_prefix: str | None = None
 
     whatsapp_cloud_api_token: str | None = None
     whatsapp_phone_number_id: str | None = None
@@ -43,3 +45,4 @@ class PublicBrandingOut(BaseModel):
 
     business_name: str | None = None
     logo_url: str | None = None
+    primary_color: str | None = None

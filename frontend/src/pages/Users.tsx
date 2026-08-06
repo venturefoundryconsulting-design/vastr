@@ -5,7 +5,25 @@ import { useState } from "react";
 import { createUser, listOutlets, listUsers, updateUser } from "../api/endpoints";
 import type { AppUser } from "../api/types";
 
-const ROLE_COLORS: Record<string, string> = { admin: "red", manager: "gold", outlet_staff: "blue" };
+const ROLE_COLORS: Record<string, string> = {
+  tenant_owner: "purple",
+  admin: "red",
+  manager: "gold",
+  sales: "cyan",
+  inventory: "geekblue",
+  outlet_staff: "blue",
+  viewer: "default",
+};
+
+const ROLE_OPTIONS = [
+  { value: "tenant_owner", label: "Tenant Owner" },
+  { value: "admin", label: "Admin" },
+  { value: "manager", label: "Manager" },
+  { value: "sales", label: "Sales" },
+  { value: "inventory", label: "Inventory" },
+  { value: "outlet_staff", label: "Outlet Staff" },
+  { value: "viewer", label: "Viewer" },
+];
 
 export default function Users() {
   const queryClient = useQueryClient();
@@ -34,7 +52,13 @@ export default function Users() {
   const columns = [
     { title: "Name", dataIndex: "name" },
     { title: "Email", dataIndex: "email" },
-    { title: "Role", dataIndex: "role", render: (v: string) => <Tag color={ROLE_COLORS[v]}>{v}</Tag> },
+    {
+      title: "Role",
+      dataIndex: "role",
+      render: (v: string) => (
+        <Tag color={ROLE_COLORS[v]}>{ROLE_OPTIONS.find((o) => o.value === v)?.label ?? v}</Tag>
+      ),
+    },
     {
       title: "Outlet",
       dataIndex: "outlet_id",
@@ -80,13 +104,7 @@ export default function Users() {
             <Input.Password />
           </Form.Item>
           <Form.Item name="role" label="Role" rules={[{ required: true }]}>
-            <Select
-              options={[
-                { value: "admin", label: "Admin" },
-                { value: "manager", label: "Manager" },
-                { value: "outlet_staff", label: "Outlet Staff" },
-              ]}
-            />
+            <Select options={ROLE_OPTIONS} />
           </Form.Item>
           <Form.Item name="outlet_id" label="Outlet">
             <Select allowClear options={outlets?.map((o) => ({ value: o.id, label: o.name }))} />

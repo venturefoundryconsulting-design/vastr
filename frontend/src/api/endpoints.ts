@@ -62,6 +62,8 @@ import type {
   TenantCreate,
   TenantUpdate,
   TenantUsage,
+  TenantSelf,
+  TenantSelfUpdate,
   AuditLogEntry,
   TestResult,
   Transfer,
@@ -394,3 +396,7 @@ export const resetTenantUserPassword = (tenantId: number, userId: number, new_pa
   apiClient.post<{ ok: boolean }>(`/api/admin/tenants/${tenantId}/users/${userId}/reset-password`, {
     new_password,
   });
+
+// ---- Tenant self-service (the tenant's own users, not Super Admin) ----
+export const getMyTenant = () => apiClient.get<TenantSelf>("/api/tenant/me");
+export const updateMyTenant = (data: TenantSelfUpdate) => apiClient.patch<TenantSelf>("/api/tenant/me", data);
