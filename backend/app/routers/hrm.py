@@ -52,9 +52,15 @@ def _leave_out(lr: LeaveRequest) -> LeaveRequestOut:
     )
 
 
-@router.get("/staff", response_model=list[StaffOut], dependencies=[Depends(require_manager_up)])
-def list_staff(db: Session = Depends(get_db)):
-    users = db.query(User).options(joinedload(User.outlet)).filter(User.is_active.is_(True)).order_by(User.name).all()
+@router.get("/staff", response_model=list[StaffOut])
+def list_staff(db: Session = Depends(get_db), current_user: User = Depends(require_manager_up)):
+    users = (
+        db.query(User)
+        .options(joinedload(User.outlet))
+        .filter(User.is_active.is_(True), User.tenant_id == current_user.tenant_id)
+        .order_by(User.name)
+        .all()
+    )
     return [
         StaffOut(id=u.id, name=u.name, role=u.role.value, outlet_id=u.outlet_id, outlet_name=u.outlet.name if u.outlet else None)
         for u in users

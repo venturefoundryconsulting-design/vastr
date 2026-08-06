@@ -48,8 +48,15 @@ def require_roles(*roles: UserRole):
     return checker
 
 
-require_admin = require_roles(UserRole.ADMIN)
-require_manager_up = require_roles(UserRole.ADMIN, UserRole.MANAGER)
+# Tenant Owner is, by definition, at least as privileged as Admin within its
+# own tenant (see app.permissions.catalog's ROLE_GRANTS, which already grants
+# it every permission Admin has) - every existing require_admin/
+# require_manager_up gate needs to include it too, or a brand-new tenant's
+# very first user (always created as Owner - see routers/admin.py's
+# create_tenant) would be locked out of Outlets/Users/Settings/Payroll/etc.
+# on day one.
+require_admin = require_roles(UserRole.ADMIN, UserRole.TENANT_OWNER)
+require_manager_up = require_roles(UserRole.ADMIN, UserRole.TENANT_OWNER, UserRole.MANAGER)
 
 
 def require_super_admin(user: User = Depends(get_current_user)) -> User:

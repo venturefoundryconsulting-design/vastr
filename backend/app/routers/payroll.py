@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
-from app.api.deps import get_db, require_admin
+from app.api.deps import get_current_user, get_db, require_admin
 from app.models.payroll import Payslip, PayslipStatus, StaffSalary
 from app.models.user import User
 from app.schemas.payroll import PayslipGenerate, PayslipOut, PayslipUpdate, StaffSalaryOut, StaffSalaryUpdate
@@ -28,8 +28,13 @@ def _payslip_out(p: Payslip) -> PayslipOut:
 
 
 @router.get("/salaries", response_model=list[StaffSalaryOut])
-def list_salaries(db: Session = Depends(get_db)):
-    staff = db.query(User).filter(User.is_active.is_(True)).order_by(User.name).all()
+def list_salaries(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    staff = (
+        db.query(User)
+        .filter(User.is_active.is_(True), User.tenant_id == current_user.tenant_id)
+        .order_by(User.name)
+        .all()
+    )
     salaries = {s.staff_id: s for s in db.query(StaffSalary).all()}
     return [
         StaffSalaryOut(
@@ -43,8 +48,13 @@ def list_salaries(db: Session = Depends(get_db)):
 
 
 @router.patch("/salaries/{staff_id}", response_model=StaffSalaryOut)
-def update_salary(staff_id: int, payload: StaffSalaryUpdate, db: Session = Depends(get_db)):
-    staff = db.get(User, staff_id)
+def update_salary(
+    staff_id: int,
+    payload: StaffSalaryUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    staff = db.query(User).filter(User.id == staff_id, User.tenant_id == current_user.tenant_id).first()
     if not staff:
         raise HTTPException(404, "Staff member not found")
     salary = db.query(StaffSalary).filter(StaffSalary.staff_id == staff_id).first()

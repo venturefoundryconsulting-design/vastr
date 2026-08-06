@@ -70,6 +70,64 @@ containers on crash and on VPS reboot (as long as the Docker daemon starts
 on boot, which is the default on all major distros) — no separate watchdog
 or cron job needed, unlike the Hostinger deployment.
 
+## Deploying the multi-tenant (Velora SaaS) conversion to vfcx.tech
+
+`vfcx.tech` is currently running the pre-conversion (single-tenant, Tanisi-
+only) code. Phases 1–3, 5, and 6 of the SaaS conversion are complete and
+verified locally (see `SAAS_ARCHITECTURE.md`, `SECURITY_REVIEW.md`,
+`PERFORMANCE_REPORT.md`) but have **not** been deployed to this VPS — every
+verification in this conversion ran against a local dev database, exactly
+as agreed before this work started. Deploying to `vfcx.tech` is a separate,
+explicit step, not implied by the code being ready. When it's time:
+
+1. **Back up the production database first.** This is not optional — the
+   migration touches every table.
+   ```bash
+   ssh -i ~/.ssh/vfcx_vps root@200.141.14.35
+   cd /opt/erpxone
+   docker compose --env-file .env.prod -f docker-compose.prod.yml exec db \
+     pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip > ~/vfcx-backup-$(date +%Y%m%d-%H%M%S).sql.gz
+   ```
+   Copy that backup off the VPS somewhere durable before proceeding.
+
+2. **Brief maintenance window.** The migration chain (`b0ec8901d716`
+   through `02945bbc9a7d` — see `MIGRATION_GUIDE.md` for what each step
+   does) should run without the app actively serving writes. For a single
+   small-scale tenant this should take seconds, but treat it as a real
+   maintenance window, not a hot deploy.
+
+3. **Pull and rebuild:**
+   ```bash
+   git pull
+   docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+   docker compose --env-file .env.prod -f docker-compose.prod.yml exec backend alembic upgrade head
+   ```
+
+4. **Smoke-test immediately:** log in as the existing Tanisi admin, confirm
+   the dashboard/products/customers/etc. render identically to before (there's
+   only one tenant on this instance, so output should be unchanged — if
+   anything looks different, that's a signal to stop and investigate before
+   doing anything else).
+
+5. **Create the first Super Admin account** (the migration doesn't do this
+   automatically — see `MIGRATION_GUIDE.md`'s "Creating a Super Admin
+   account" section), using a real, non-demo password.
+
+6. **Rollback path:** if step 4's smoke test fails, restore the Step 1
+   backup rather than attempting `alembic downgrade` on a database that's
+   already served live traffic on the new schema:
+   ```bash
+   docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T db \
+     psql -U "$POSTGRES_USER" "$POSTGRES_DB" < <(gunzip -c ~/vfcx-backup-*.sql.gz)
+   git checkout <previous-commit>
+   docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+   ```
+
+Not yet deployed here (and not blocking the above): the Phase 4 tenant
+self-service branding UI, feature-flag enforcement, and billing — all
+explicitly out of scope for this conversion, see `SAAS_ARCHITECTURE.md`'s
+"What's explicitly deferred."
+
 ## What's different from the Hostinger deployment
 
 | | Hostinger (backup branch) | VPS (this) |
