@@ -19,5 +19,6 @@ class CurrentUser(BaseModel):
     email: EmailStr
     role: UserRole
     outlet_id: int | None = None
+    tenant_id: int | None = None
 
     model_config = {"from_attributes": True}

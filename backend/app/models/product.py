@@ -1,10 +1,10 @@
 import enum
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Boolean, Enum, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
 class ImageAngle(str, enum.Enum):
@@ -15,7 +15,7 @@ class ImageAngle(str, enum.Enum):
     OTHER = "other"
 
 
-class Category(Base, TimestampMixin):
+class Category(Base, TimestampMixin, TenantMixin):
     __tablename__ = "categories"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -27,7 +27,7 @@ class Category(Base, TimestampMixin):
     products: Mapped[list["Product"]] = relationship(back_populates="category")
 
 
-class Product(Base, TimestampMixin):
+class Product(Base, TimestampMixin, TenantMixin):
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -48,13 +48,17 @@ class Product(Base, TimestampMixin):
     )
 
 
-class ProductVariant(Base, TimestampMixin):
+class ProductVariant(Base, TimestampMixin, TenantMixin):
     __tablename__ = "product_variants"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "sku", name="uq_variant_tenant_sku"),
+        UniqueConstraint("tenant_id", "barcode", name="uq_variant_tenant_barcode"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
-    sku: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    barcode: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, default=None)
+    sku: Mapped[str] = mapped_column(String(64), index=True)
+    barcode: Mapped[str | None] = mapped_column(String(64), index=True, default=None)
     size: Mapped[str | None] = mapped_column(String(20), default=None)
     color: Mapped[str | None] = mapped_column(String(40), default=None)
     cost_price: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
@@ -72,7 +76,7 @@ class ProductVariant(Base, TimestampMixin):
         return " / ".join([b for b in bits if b])
 
 
-class ProductImage(Base, TimestampMixin):
+class ProductImage(Base, TimestampMixin, TenantMixin):
     __tablename__ = "product_images"
 
     id: Mapped[int] = mapped_column(primary_key=True)

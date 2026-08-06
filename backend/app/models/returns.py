@@ -1,10 +1,10 @@
 import enum
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Boolean, Enum, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 from app.models.sale import PaymentMode
 
 
@@ -13,7 +13,7 @@ class RefundMode(str, enum.Enum):
     STORE_CREDIT = "store_credit"
 
 
-class Return(Base, TimestampMixin):
+class Return(Base, TimestampMixin, TenantMixin):
     """A return, or a return-and-exchange, against a prior Sale.
 
     exchanged_value - returned_value = difference: positive means the customer
@@ -22,9 +22,10 @@ class Return(Base, TimestampMixin):
     """
 
     __tablename__ = "returns"
+    __table_args__ = (UniqueConstraint("tenant_id", "return_number", name="uq_return_tenant_number"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    return_number: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    return_number: Mapped[str] = mapped_column(String(30), index=True)
     sale_id: Mapped[int] = mapped_column(ForeignKey("sales.id"))
     outlet_id: Mapped[int] = mapped_column(ForeignKey("outlets.id"))
     customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id"), default=None)
@@ -60,7 +61,7 @@ class Return(Base, TimestampMixin):
         return round(self.exchanged_value - self.returned_value, 2)
 
 
-class ReturnItem(Base, TimestampMixin):
+class ReturnItem(Base, TimestampMixin, TenantMixin):
     """An item handed back by the customer from the original sale."""
 
     __tablename__ = "return_items"
@@ -79,7 +80,7 @@ class ReturnItem(Base, TimestampMixin):
     variant: Mapped["ProductVariant"] = relationship()  # noqa: F821
 
 
-class ExchangeItem(Base, TimestampMixin):
+class ExchangeItem(Base, TimestampMixin, TenantMixin):
     """A new item given to the customer in place of a returned one."""
 
     __tablename__ = "exchange_items"

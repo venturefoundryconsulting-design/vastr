@@ -1,10 +1,10 @@
 import enum
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
 class TransferStatus(str, enum.Enum):
@@ -14,11 +14,12 @@ class TransferStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
-class StockTransfer(Base, TimestampMixin):
+class StockTransfer(Base, TimestampMixin, TenantMixin):
     __tablename__ = "stock_transfers"
+    __table_args__ = (UniqueConstraint("tenant_id", "transfer_number", name="uq_transfer_tenant_number"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    transfer_number: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    transfer_number: Mapped[str] = mapped_column(String(30), index=True)
     source_outlet_id: Mapped[int] = mapped_column(ForeignKey("outlets.id"))
     dest_outlet_id: Mapped[int] = mapped_column(ForeignKey("outlets.id"))
     status: Mapped[TransferStatus] = mapped_column(Enum(TransferStatus), default=TransferStatus.REQUESTED)
@@ -34,7 +35,7 @@ class StockTransfer(Base, TimestampMixin):
     )
 
 
-class StockTransferItem(Base, TimestampMixin):
+class StockTransferItem(Base, TimestampMixin, TenantMixin):
     __tablename__ = "stock_transfer_items"
 
     id: Mapped[int] = mapped_column(primary_key=True)

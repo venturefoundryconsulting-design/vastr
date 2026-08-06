@@ -4,14 +4,16 @@ from sqlalchemy import Enum, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
-class StockLevel(Base, TimestampMixin):
+class StockLevel(Base, TimestampMixin, TenantMixin):
     """Current on-hand quantity of a variant at an outlet/warehouse."""
 
     __tablename__ = "stock_levels"
-    __table_args__ = (UniqueConstraint("variant_id", "outlet_id", name="uq_stock_variant_outlet"),)
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "variant_id", "outlet_id", name="uq_stock_variant_outlet"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     variant_id: Mapped[int] = mapped_column(ForeignKey("product_variants.id"))
@@ -31,7 +33,7 @@ class MovementType(str, enum.Enum):
     RETURN = "return"
 
 
-class StockMovement(Base, TimestampMixin):
+class StockMovement(Base, TimestampMixin, TenantMixin):
     """Immutable audit trail of every stock quantity change."""
 
     __tablename__ = "stock_movements"

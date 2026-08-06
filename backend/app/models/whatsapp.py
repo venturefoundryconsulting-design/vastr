@@ -4,7 +4,7 @@ from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
 class WhatsAppMessageStatus(str, enum.Enum):
@@ -15,7 +15,7 @@ class WhatsAppMessageStatus(str, enum.Enum):
     FAILED = "failed"
 
 
-class WhatsAppMessage(Base, TimestampMixin):
+class WhatsAppMessage(Base, TimestampMixin, TenantMixin):
     """Log of PO/invoice documents shared with vendors over WhatsApp."""
 
     __tablename__ = "whatsapp_messages"

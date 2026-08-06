@@ -5,10 +5,10 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
-class Customer(Base, TimestampMixin):
+class Customer(Base, TimestampMixin, TenantMixin):
     __tablename__ = "customers"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -50,7 +50,7 @@ class Customer(Base, TimestampMixin):
     )
 
 
-class CustomerAddress(Base, TimestampMixin):
+class CustomerAddress(Base, TimestampMixin, TenantMixin):
     __tablename__ = "customer_addresses"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -71,7 +71,7 @@ class BalanceType(str, enum.Enum):
     OUTSTANDING = "outstanding"
 
 
-class CustomerBalanceAdjustment(Base, TimestampMixin):
+class CustomerBalanceAdjustment(Base, TimestampMixin, TenantMixin):
     """Immutable audit trail of every credit_balance change, mirrors StockMovement."""
 
     __tablename__ = "customer_balance_adjustments"
@@ -88,7 +88,7 @@ class CustomerBalanceAdjustment(Base, TimestampMixin):
     customer: Mapped["Customer"] = relationship(back_populates="balance_adjustments")
 
 
-class CustomerLoyaltyAdjustment(Base, TimestampMixin):
+class CustomerLoyaltyAdjustment(Base, TimestampMixin, TenantMixin):
     """Immutable audit trail of every loyalty_points change (earn, redeem, or manual bonus)."""
 
     __tablename__ = "customer_loyalty_adjustments"

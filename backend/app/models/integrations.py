@@ -1,11 +1,11 @@
 import enum
 
-from sqlalchemy import Boolean, DateTime, Enum, Integer, String
+from sqlalchemy import Boolean, DateTime, Enum, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
 class EmailProviderType(str, enum.Enum):
@@ -25,16 +25,17 @@ class SmsProviderType(str, enum.Enum):
     TWILIO = "twilio"
 
 
-class EmailProvider(Base, TimestampMixin):
+class EmailProvider(Base, TimestampMixin, TenantMixin):
     """One row per email provider type. Enabling + setting one as default makes it
     the active send path; the rest stay configured-but-idle so switching providers
     is instant and previous credentials aren't lost.
     """
 
     __tablename__ = "email_providers"
+    __table_args__ = (UniqueConstraint("tenant_id", "provider", name="uq_email_provider_tenant"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    provider: Mapped[EmailProviderType] = mapped_column(Enum(EmailProviderType), unique=True, index=True)
+    provider: Mapped[EmailProviderType] = mapped_column(Enum(EmailProviderType), index=True)
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -59,13 +60,14 @@ class EmailProvider(Base, TimestampMixin):
     last_test_error: Mapped[str | None] = mapped_column(String(500), default=None)
 
 
-class SmsProviderConfig(Base, TimestampMixin):
+class SmsProviderConfig(Base, TimestampMixin, TenantMixin):
     """Same one-row-per-provider pattern as EmailProvider."""
 
     __tablename__ = "sms_provider_configs"
+    __table_args__ = (UniqueConstraint("tenant_id", "provider", name="uq_sms_provider_tenant"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    provider: Mapped[SmsProviderType] = mapped_column(Enum(SmsProviderType), unique=True, index=True)
+    provider: Mapped[SmsProviderType] = mapped_column(Enum(SmsProviderType), index=True)
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
 

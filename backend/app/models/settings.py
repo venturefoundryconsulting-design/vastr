@@ -1,23 +1,28 @@
-from sqlalchemy import Boolean, String
+from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
-class AppSettings(Base, TimestampMixin):
-    """Singleton row (id=1) holding admin-configurable integration settings.
+class AppSettings(Base, TimestampMixin, TenantMixin):
+    """One row per tenant, holding admin-configurable integration settings.
 
     Editable from the Settings page instead of .env, so the admin can turn on
     WhatsApp receipt delivery without a redeploy. SMS and Email are configured
     per-provider in their own tables (app.models.integrations) instead of here.
     Secret fields are never returned to the client - only an `_is_set` flag - and
     are left unchanged on update when the incoming value is None.
+
+    tenant_id is declared directly (not via TenantMixin) because it's unique here -
+    get-or-create-per-tenant, not a plain foreign key filter - see
+    app.services.app_settings.
     """
 
     __tablename__ = "app_settings"
 
-    id: Mapped[int] = mapped_column(primary_key=True, default=1)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"), unique=True, index=True)
 
     # Business profile - printed on every PO / receipt / transfer document
     business_name: Mapped[str | None] = mapped_column(String(200), default=None)

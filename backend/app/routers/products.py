@@ -303,7 +303,7 @@ async def upload_product_image(
     if not ext:
         raise HTTPException(400, "Only JPEG, PNG or WebP images are allowed")
 
-    product_dir = settings.UPLOAD_DIR / "products" / str(product_id)
+    product_dir = settings.tenant_upload_dir(product.tenant_id, "products", str(product_id))
     product_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{uuid.uuid4().hex}{ext}"
     dest = product_dir / filename
@@ -317,7 +317,7 @@ async def upload_product_image(
         product_id=product_id,
         color=color or None,
         angle=angle,
-        file_path=f"products/{product_id}/{filename}",
+        file_path=settings.tenant_relative_path(product.tenant_id, "products", str(product_id), filename),
         is_primary=is_first,
     )
     db.add(image)

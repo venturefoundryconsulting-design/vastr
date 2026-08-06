@@ -6,10 +6,12 @@ Safe to re-run - skips creation if the admin user already exists.
 
 from app.core.database import SessionLocal
 from app.core.security import hash_password
+from app.core.tenant_context import tenant_scope
 from app.models.customer import Customer
 from app.models.inventory import StockLevel
 from app.models.outlet import Outlet
 from app.models.product import Category, Product, ProductVariant
+from app.models.tenant import SubscriptionPlanName, SubscriptionStatus, Tenant
 from app.models.user import User, UserRole
 from app.models.vendor import Vendor, VendorProduct
 
@@ -21,6 +23,27 @@ def run() -> None:
             print("Seed data already present, skipping.")
             return
 
+        tenant = db.query(Tenant).filter(Tenant.slug == "tanisi").first()
+        if not tenant:
+            tenant = Tenant(
+                company_name="Tanisi",
+                slug="tanisi",
+                subscription_plan=SubscriptionPlanName.ENTERPRISE,
+                subscription_status=SubscriptionStatus.ACTIVE,
+            )
+            db.add(tenant)
+            db.flush()
+
+        # Every TenantMixin row created below is auto-stamped with tenant.id by
+        # the before_flush listener (see app.core.tenant_context) once this
+        # scope is active - no need to pass tenant_id to each constructor.
+        with tenant_scope(tenant.id):
+            _seed_tanisi_demo_data(db, tenant)
+    finally:
+        db.close()
+
+
+def _seed_tanisi_demo_data(db, tenant: Tenant) -> None:
         warehouse = Outlet(name="Central Warehouse", code="WH-01", is_warehouse=True, address="Bangalore")
         store1 = Outlet(name="Tanisi - Indiranagar", code="ST-01", address="100ft Road, Indiranagar")
         store2 = Outlet(name="Tanisi - Koramangala", code="ST-02", address="80ft Road, Koramangala")
@@ -32,6 +55,7 @@ def run() -> None:
             email="admin@tanisi.demo.com",
             hashed_password=hash_password("admin123"),
             role=UserRole.ADMIN,
+            tenant_id=tenant.id,
         )
         manager = User(
             name="Store Manager",
@@ -39,6 +63,7 @@ def run() -> None:
             hashed_password=hash_password("manager123"),
             role=UserRole.MANAGER,
             outlet_id=store1.id,
+            tenant_id=tenant.id,
         )
         staff = User(
             name="Counter Staff",
@@ -46,6 +71,7 @@ def run() -> None:
             hashed_password=hash_password("staff123"),
             role=UserRole.OUTLET_STAFF,
             outlet_id=store1.id,
+            tenant_id=tenant.id,
         )
         db.add_all([admin, manager, staff])
 
@@ -142,8 +168,6 @@ def run() -> None:
         db.commit()
         print("Seed data created.")
         print("Login with admin@tanisi.demo.com / admin123")
-    finally:
-        db.close()
 
 
 if __name__ == "__main__":

@@ -33,6 +33,16 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
 
+    def tenant_upload_dir(self, tenant_id: int, *parts: str) -> Path:
+        """uploads/tenant-{id}/<category>/... - keeps each tenant's files in their
+        own subtree even though they're all served from one /uploads static mount."""
+        return self.UPLOAD_DIR.joinpath(f"tenant-{tenant_id}", *parts)
+
+    @staticmethod
+    def tenant_relative_path(tenant_id: int, *parts: str) -> str:
+        """The DB-stored relative path counterpart to tenant_upload_dir()."""
+        return "/".join([f"tenant-{tenant_id}", *parts])
+
 
 @lru_cache
 def get_settings() -> Settings:

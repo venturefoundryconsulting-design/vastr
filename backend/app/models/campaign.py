@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 from app.models.whatsapp import WhatsAppMessageStatus
 
 
@@ -31,7 +31,7 @@ class CampaignStatus(str, enum.Enum):
     FAILED = "failed"  # every recipient failed
 
 
-class MessageTemplate(Base, TimestampMixin):
+class MessageTemplate(Base, TimestampMixin, TenantMixin):
     """A reusable, saved campaign message body with placeholder tokens."""
 
     __tablename__ = "message_templates"
@@ -42,7 +42,7 @@ class MessageTemplate(Base, TimestampMixin):
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None)
 
 
-class Campaign(Base, TimestampMixin):
+class Campaign(Base, TimestampMixin, TenantMixin):
     """A one-off WhatsApp broadcast sent to a customer segment."""
 
     __tablename__ = "campaigns"
@@ -79,7 +79,7 @@ class Campaign(Base, TimestampMixin):
     )
 
 
-class CampaignRecipient(Base, TimestampMixin):
+class CampaignRecipient(Base, TimestampMixin, TenantMixin):
     __tablename__ = "campaign_recipients"
 
     id: Mapped[int] = mapped_column(primary_key=True)

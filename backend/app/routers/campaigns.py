@@ -67,7 +67,9 @@ def list_placeholders(_=Depends(require_manager_up)):
 
 
 @router.post("/upload-media", response_model=MediaUploadResult)
-async def upload_campaign_media(file: UploadFile = File(...), _=Depends(require_manager_up)):
+async def upload_campaign_media(
+    file: UploadFile = File(...), current_user: User = Depends(require_manager_up)
+):
     match = CAMPAIGN_MEDIA_TYPES.get(file.content_type)
     if not match:
         raise HTTPException(400, "Only JPEG/PNG/WebP images, MP4 video, or PDF documents are allowed")
@@ -77,12 +79,13 @@ async def upload_campaign_media(file: UploadFile = File(...), _=Depends(require_
     if len(contents) > 16 * 1024 * 1024:
         raise HTTPException(400, "File must be under 16MB")
 
-    media_dir = settings.UPLOAD_DIR / "campaigns"
+    media_dir = settings.tenant_upload_dir(current_user.tenant_id, "campaigns")
     media_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{uuid.uuid4().hex}{ext}"
     (media_dir / filename).write_bytes(contents)
 
-    return MediaUploadResult(url=f"{settings.PUBLIC_BASE_URL}/uploads/campaigns/{filename}", media_type=media_type)
+    rel = settings.tenant_relative_path(current_user.tenant_id, "campaigns", filename)
+    return MediaUploadResult(url=f"{settings.PUBLIC_BASE_URL}/uploads/{rel}", media_type=media_type)
 
 
 @router.post("/preview", response_model=SegmentPreviewResult, dependencies=[Depends(require_manager_up)])

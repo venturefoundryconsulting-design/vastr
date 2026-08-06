@@ -1,10 +1,10 @@
 import enum
 
-from sqlalchemy import Enum, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Enum, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
 class PaymentMode(str, enum.Enum):
@@ -14,11 +14,12 @@ class PaymentMode(str, enum.Enum):
     OTHER = "other"
 
 
-class Sale(Base, TimestampMixin):
+class Sale(Base, TimestampMixin, TenantMixin):
     __tablename__ = "sales"
+    __table_args__ = (UniqueConstraint("tenant_id", "invoice_number", name="uq_sale_tenant_invoice"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    invoice_number: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    invoice_number: Mapped[str] = mapped_column(String(30), index=True)
     outlet_id: Mapped[int] = mapped_column(ForeignKey("outlets.id"))
     cashier_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None)
     customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id"), default=None)
@@ -63,7 +64,7 @@ class Sale(Base, TimestampMixin):
         )
 
 
-class SaleItem(Base, TimestampMixin):
+class SaleItem(Base, TimestampMixin, TenantMixin):
     __tablename__ = "sale_items"
 
     id: Mapped[int] = mapped_column(primary_key=True)

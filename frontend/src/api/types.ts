@@ -20,6 +20,7 @@ export interface CurrentUser {
   email: string;
   role: UserRole;
   outlet_id?: number | null;
+  tenant_id?: number | null;
 }
 
 export interface AppUser extends CurrentUser {

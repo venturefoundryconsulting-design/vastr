@@ -2,10 +2,10 @@ from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
-class Vendor(Base, TimestampMixin):
+class Vendor(Base, TimestampMixin, TenantMixin):
     __tablename__ = "vendors"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -25,7 +25,7 @@ class Vendor(Base, TimestampMixin):
     )
 
 
-class VendorProduct(Base, TimestampMixin):
+class VendorProduct(Base, TimestampMixin, TenantMixin):
     """Which vendor supplies which variant, and at what cost - drives reorder suggestions."""
 
     __tablename__ = "vendor_products"

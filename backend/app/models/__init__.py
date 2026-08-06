@@ -27,6 +27,7 @@ from app.models.purchase import PurchaseOrder, PurchaseOrderItem
 from app.models.returns import ExchangeItem, RefundMode, Return, ReturnItem
 from app.models.sale import Sale, SaleItem
 from app.models.settings import AppSettings
+from app.models.tenant import SubscriptionPlanName, SubscriptionStatus, Tenant
 from app.models.transfer import StockTransfer, StockTransferItem
 from app.models.user import User
 from app.models.vendor import Vendor, VendorProduct
@@ -83,6 +84,9 @@ __all__ = [
     "StockMovement",
     "StockTransfer",
     "StockTransferItem",
+    "SubscriptionPlanName",
+    "SubscriptionStatus",
+    "Tenant",
     "User",
     "Vendor",
     "VendorProduct",

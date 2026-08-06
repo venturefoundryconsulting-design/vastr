@@ -1,10 +1,10 @@
 import enum
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, Text
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
 class AlterationStatus(str, enum.Enum):
@@ -16,13 +16,14 @@ class AlterationStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
-class Alteration(Base, TimestampMixin):
+class Alteration(Base, TimestampMixin, TenantMixin):
     """Tracks a garment through tailoring: requested -> assigned -> in_progress -> ready -> delivered."""
 
     __tablename__ = "alterations"
+    __table_args__ = (UniqueConstraint("tenant_id", "alteration_number", name="uq_alteration_tenant_number"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    alteration_number: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    alteration_number: Mapped[str] = mapped_column(String(30), index=True)
     outlet_id: Mapped[int] = mapped_column(ForeignKey("outlets.id"))
     sale_id: Mapped[int | None] = mapped_column(ForeignKey("sales.id"), default=None)
     sale_item_id: Mapped[int | None] = mapped_column(ForeignKey("sale_items.id"), default=None)

@@ -17,6 +17,10 @@ class User(Base, TimestampMixin):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # Nullable: platform Super Admins aren't members of any tenant. Every other
+    # role must have one - enforced in app code, not the DB, so the same User
+    # model can represent both without two tables.
+    tenant_id: Mapped[int | None] = mapped_column(ForeignKey("tenants.id"), index=True, default=None)
     name: Mapped[str] = mapped_column(String(120))
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))

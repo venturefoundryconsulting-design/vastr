@@ -1,10 +1,10 @@
 import enum
 
-from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
 class DiscountType(str, enum.Enum):
@@ -20,7 +20,7 @@ class DiscountScope(str, enum.Enum):
     PRODUCT = "product"
 
 
-class DiscountRule(Base, TimestampMixin):
+class DiscountRule(Base, TimestampMixin, TenantMixin):
     """A promotional rule, applied either automatically or via a coupon code.
 
     A null `code` means the rule is evaluated automatically against every cart;
@@ -28,10 +28,11 @@ class DiscountRule(Base, TimestampMixin):
     """
 
     __tablename__ = "discount_rules"
+    __table_args__ = (UniqueConstraint("tenant_id", "code", name="uq_discount_tenant_code"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
-    code: Mapped[str | None] = mapped_column(String(40), unique=True, index=True, default=None)
+    code: Mapped[str | None] = mapped_column(String(40), index=True, default=None)
     discount_type: Mapped[DiscountType] = mapped_column(Enum(DiscountType))
     scope: Mapped[DiscountScope] = mapped_column(Enum(DiscountScope), default=DiscountScope.ALL)
     category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"), default=None)

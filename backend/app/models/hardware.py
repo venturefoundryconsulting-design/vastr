@@ -1,12 +1,12 @@
-from sqlalchemy import Boolean, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
-class HardwareAiSettings(Base, TimestampMixin):
-    """Singleton row (id=1) holding config for hardware peripherals and AI features.
+class HardwareAiSettings(Base, TimestampMixin, TenantMixin):
+    """One row per tenant, holding config for hardware peripherals and AI features.
 
     This is config storage only - most of these fields aren't consumed by a feature
     yet (biometric attendance and the OpenAI-backed AI features don't exist in the
@@ -15,11 +15,15 @@ class HardwareAiSettings(Base, TimestampMixin):
     printing already works via each outlet's paper-size setting plus the browser's
     own print dialog (browsers don't allow a webpage to pick a specific printer, for
     security reasons - that choice always belongs to the OS/browser print dialog).
+
+    tenant_id is declared directly (not via TenantMixin) because it's unique here -
+    get-or-create-per-tenant - see app.services.hardware_settings.
     """
 
     __tablename__ = "hardware_ai_settings"
 
-    id: Mapped[int] = mapped_column(primary_key=True, default=1)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"), unique=True, index=True)
 
     # Barcode scanner - scanners already work as keyboard input; these just tune it.
     barcode_min_length: Mapped[int | None] = mapped_column(Integer, default=None)

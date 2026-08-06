@@ -1,10 +1,10 @@
 import enum
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
 class PurchaseOrderStatus(str, enum.Enum):
@@ -16,11 +16,12 @@ class PurchaseOrderStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
-class PurchaseOrder(Base, TimestampMixin):
+class PurchaseOrder(Base, TimestampMixin, TenantMixin):
     __tablename__ = "purchase_orders"
+    __table_args__ = (UniqueConstraint("tenant_id", "po_number", name="uq_po_tenant_number"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    po_number: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    po_number: Mapped[str] = mapped_column(String(30), index=True)
     vendor_id: Mapped[int] = mapped_column(ForeignKey("vendors.id"))
     outlet_id: Mapped[int] = mapped_column(ForeignKey("outlets.id"))
     status: Mapped[PurchaseOrderStatus] = mapped_column(
@@ -42,7 +43,7 @@ class PurchaseOrder(Base, TimestampMixin):
         return sum(item.amount for item in self.items)
 
 
-class PurchaseOrderItem(Base, TimestampMixin):
+class PurchaseOrderItem(Base, TimestampMixin, TenantMixin):
     __tablename__ = "purchase_order_items"
 
     id: Mapped[int] = mapped_column(primary_key=True)

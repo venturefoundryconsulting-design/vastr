@@ -4,7 +4,7 @@ from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, UniqueConstrain
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import TenantMixin, TimestampMixin
 
 
 class AttendanceStatus(str, enum.Enum):
@@ -14,12 +14,12 @@ class AttendanceStatus(str, enum.Enum):
     ON_LEAVE = "on_leave"
 
 
-class Attendance(Base, TimestampMixin):
+class Attendance(Base, TimestampMixin, TenantMixin):
     """One row per staff member per calendar day. Staff self-check-in/out; admin/manager
     can add manual corrections (e.g. marking a no-show absent, fixing a missed check-out)."""
 
     __tablename__ = "attendance"
-    __table_args__ = (UniqueConstraint("staff_id", "date", name="uq_attendance_staff_date"),)
+    __table_args__ = (UniqueConstraint("tenant_id", "staff_id", "date", name="uq_attendance_staff_date"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     staff_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -47,7 +47,7 @@ class LeaveStatus(str, enum.Enum):
     REJECTED = "rejected"
 
 
-class LeaveRequest(Base, TimestampMixin):
+class LeaveRequest(Base, TimestampMixin, TenantMixin):
     __tablename__ = "leave_requests"
 
     id: Mapped[int] = mapped_column(primary_key=True)

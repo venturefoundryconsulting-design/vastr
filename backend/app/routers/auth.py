@@ -16,7 +16,10 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect email or password")
     if not user.is_active:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User is inactive")
-    token = create_access_token(subject=str(user.id), extra_claims={"role": user.role.value})
+    token = create_access_token(
+        subject=str(user.id),
+        extra_claims={"role": user.role.value, "tenant_id": user.tenant_id},
+    )
     return TokenResponse(access_token=token)
 
 

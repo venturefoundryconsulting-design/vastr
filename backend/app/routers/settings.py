@@ -60,19 +60,20 @@ async def upload_logo(file: UploadFile = File(...), db: Session = Depends(get_db
     if len(contents) > 2 * 1024 * 1024:
         raise HTTPException(400, "Logo must be under 2MB")
 
-    logo_dir = env_settings.UPLOAD_DIR / "branding"
+    s = get_app_settings(db)
+    logo_dir = env_settings.tenant_upload_dir(s.tenant_id, "branding")
     logo_dir.mkdir(parents=True, exist_ok=True)
     filename = f"logo-{uuid.uuid4().hex}{ext}"
     (logo_dir / filename).write_bytes(contents)
+    branding_prefix = f"{env_settings.PUBLIC_BASE_URL}/uploads/{env_settings.tenant_relative_path(s.tenant_id, 'branding')}/"
 
-    s = get_app_settings(db)
     old_url = s.logo_url
-    s.logo_url = f"{env_settings.PUBLIC_BASE_URL}/uploads/branding/{filename}"
+    s.logo_url = f"{branding_prefix}{filename}"
     db.commit()
     db.refresh(s)
 
-    if old_url and old_url.startswith(f"{env_settings.PUBLIC_BASE_URL}/uploads/branding/"):
-        old_path = env_settings.UPLOAD_DIR / "branding" / old_url.rsplit("/", 1)[-1]
+    if old_url and old_url.startswith(branding_prefix):
+        old_path = env_settings.tenant_upload_dir(s.tenant_id, "branding", old_url.rsplit("/", 1)[-1])
         old_path.unlink(missing_ok=True)
 
     return _to_out(s)
@@ -81,8 +82,9 @@ async def upload_logo(file: UploadFile = File(...), db: Session = Depends(get_db
 @router.delete("/logo", response_model=AppSettingsOut)
 def remove_logo(db: Session = Depends(get_db)):
     s = get_app_settings(db)
-    if s.logo_url and s.logo_url.startswith(f"{env_settings.PUBLIC_BASE_URL}/uploads/branding/"):
-        old_path = env_settings.UPLOAD_DIR / "branding" / s.logo_url.rsplit("/", 1)[-1]
+    branding_prefix = f"{env_settings.PUBLIC_BASE_URL}/uploads/{env_settings.tenant_relative_path(s.tenant_id, 'branding')}/"
+    if s.logo_url and s.logo_url.startswith(branding_prefix):
+        old_path = env_settings.tenant_upload_dir(s.tenant_id, "branding", s.logo_url.rsplit("/", 1)[-1])
         old_path.unlink(missing_ok=True)
     s.logo_url = None
     db.commit()
