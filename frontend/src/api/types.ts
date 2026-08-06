@@ -628,6 +628,21 @@ export interface PublicBranding {
   business_name?: string | null;
   logo_url?: string | null;
   primary_color?: string | null;
+  slug?: string | null;
+}
+
+export interface RegisterRequest {
+  company_name: string;
+  slug: string;
+  owner_name: string;
+  email: string;
+  password: string;
+  plan: "free" | "starter" | "professional" | "enterprise";
+}
+
+export interface SlugAvailability {
+  slug: string;
+  available: boolean;
 }
 
 export type EmailProviderType = "brevo" | "resend" | "emailjs" | "smtp_generic" | "gmail_smtp" | "outlook_smtp";

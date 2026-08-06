@@ -1,6 +1,7 @@
 import uuid
+from typing import Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, require_admin
@@ -105,11 +106,26 @@ def remove_logo(db: Session = Depends(get_db)):
 
 
 @public_router.get("/public", response_model=PublicBrandingOut)
-def get_public_branding(db: Session = Depends(get_db)):
+def get_public_branding(slug: Optional[str] = Query(None), db: Session = Depends(get_db)):
+    """Returns minimal branding for the login page. Pass ?slug=<store-slug> to get a
+    specific tenant's branding (used when the login page is hit on that store's subdomain).
+    Without a slug it falls back to the first active tenant (single-store local dev)."""
+    if slug:
+        tenant = db.query(Tenant).filter(Tenant.slug == slug, Tenant.is_active.is_(True)).first()
+        if not tenant:
+            raise HTTPException(404, "Store not found")
+        s = db.query(AppSettings).filter(AppSettings.tenant_id == tenant.id).first()
+        return PublicBrandingOut(
+            business_name=s.business_name if s else tenant.company_name,
+            logo_url=s.logo_url if s else None,
+            primary_color=tenant.primary_color,
+            slug=tenant.slug,
+        )
     s = get_app_settings(db)
     tenant = db.get(Tenant, s.tenant_id)
     return PublicBrandingOut(
         business_name=s.business_name,
         logo_url=s.logo_url,
         primary_color=tenant.primary_color if tenant else None,
+        slug=tenant.slug if tenant else None,
     )

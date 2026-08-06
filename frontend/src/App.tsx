@@ -11,7 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import Discounts from "./pages/Discounts";
 import HRM from "./pages/HRM";
 import Inventory from "./pages/Inventory";
-import Landing from "./pages/Landing";
+import Landing from "./saas/Landing";
+import Signup from "./saas/Signup";
 import Login from "./pages/Login";
 import Outlets from "./pages/Outlets";
 import Payroll from "./pages/Payroll";
@@ -62,6 +63,7 @@ export default function App() {
       <ScrollToTop />
       <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
       <Route path="/" element={<Root />} />
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
       <Route

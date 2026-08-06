@@ -44,12 +44,14 @@ import type {
   ProductImage,
   PurchaseOrder,
   ReceiptSendResult,
+  RegisterRequest,
   ReorderSuggestion,
   Return,
   Sale,
   SalesTrendPoint,
   SegmentParams,
   SegmentPreviewResult,
+  SlugAvailability,
   SmsProviderOut,
   SmsProviderType,
   SmsProviderUpdate,
@@ -77,6 +79,12 @@ export const login = (email: string, password: string) =>
   apiClient.post<{ access_token: string; token_type: string }>("/api/auth/login", { email, password });
 
 export const getMe = () => apiClient.get<CurrentUser>("/api/auth/me");
+
+export const registerStore = (data: RegisterRequest) =>
+  apiClient.post<{ access_token: string; token_type: string }>("/api/auth/register", data);
+
+export const checkSlug = (slug: string) =>
+  apiClient.get<SlugAvailability>("/api/auth/check-slug", { params: { slug } });
 
 // ---- Outlets ----
 export const listOutlets = () => apiClient.get<Outlet[]>("/api/outlets");
@@ -324,7 +332,8 @@ export const getDashboardSummary = () => apiClient.get<DashboardSummary>("/api/d
 export const getAppSettings = () => apiClient.get<AppSettings>("/api/settings");
 export const updateAppSettings = (data: Record<string, unknown>) =>
   apiClient.patch<AppSettings>("/api/settings", data);
-export const getPublicBranding = () => apiClient.get<PublicBranding>("/api/settings/public");
+export const getPublicBranding = (slug?: string) =>
+  apiClient.get<PublicBranding>("/api/settings/public", { params: slug ? { slug } : {} });
 export const uploadLogo = (file: File) => {
   const formData = new FormData();
   formData.append("file", file);

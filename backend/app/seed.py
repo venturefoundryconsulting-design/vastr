@@ -24,6 +24,7 @@ def run() -> None:
     db = SessionLocal()
     try:
         if db.query(User).filter(User.email == "admin@tanisi.demo.com").first():
+            _ensure_super_admin(db)
             print("Seed data already present, skipping.")
             return
 
@@ -43,8 +44,24 @@ def run() -> None:
         # scope is active - no need to pass tenant_id to each constructor.
         with tenant_scope(tenant.id):
             _seed_tanisi_demo_data(db, tenant)
+        _ensure_super_admin(db)
     finally:
         db.close()
+
+
+def _ensure_super_admin(db) -> None:
+    if db.query(User).filter(User.email == "superadmin@velora.dev").first():
+        return
+    sa = User(
+        name="Velora Super Admin",
+        email="superadmin@velora.dev",
+        hashed_password=hash_password("velora2024!"),
+        role=UserRole.SUPER_ADMIN,
+        tenant_id=None,
+    )
+    db.add(sa)
+    db.commit()
+    print("Super Admin created: superadmin@velora.dev / velora2024!")
 
 
 def _seed_tanisi_demo_data(db, tenant: Tenant) -> None:

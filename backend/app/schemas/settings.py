@@ -46,3 +46,4 @@ class PublicBrandingOut(BaseModel):
     business_name: str | None = None
     logo_url: str | None = None
     primary_color: str | None = None
+    slug: str | None = None

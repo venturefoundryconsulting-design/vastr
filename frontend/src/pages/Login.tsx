@@ -10,15 +10,27 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Button, Card, Col, Divider, Form, Input, Row, Typography, message } from "antd";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getPublicBranding } from "../api/endpoints";
 import { useAuth } from "../context/AuthContext";
 import { BRAND, BRAND_DARK } from "../theme";
 
 const DEMO_ACCOUNTS = {
+  superadmin: { email: "superadmin@velora.dev", password: "velora2024!" },
   admin: { email: "admin@tanisi.demo.com", password: "admin123" },
   staff: { email: "staff@tanisi.demo.com", password: "staff123" },
 };
+
+function detectStoreSlug(searchParams: URLSearchParams): string | undefined {
+  const fromParam = searchParams.get("store");
+  if (fromParam) return fromParam;
+  const host = window.location.hostname;
+  const parts = host.split(".");
+  if (parts.length >= 3 && parts[0] !== "www" && parts[0] !== "app") {
+    return parts[0];
+  }
+  return undefined;
+}
 
 const FEATURES = [
   { icon: <ShoppingCartOutlined />, label: "Fast, barcode-driven point of sale" },
@@ -67,14 +79,16 @@ function LogoMark({ size = 52, logoUrl }: { size?: number; logoUrl?: string | nu
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [quickRole, setQuickRole] = useState<"admin" | "staff" | null>(null);
+  const [quickRole, setQuickRole] = useState<"superadmin" | "admin" | "staff" | null>(null);
+  const storeSlug = detectStoreSlug(searchParams);
   const { data: branding } = useQuery({
-    queryKey: ["public-branding"],
-    queryFn: () => getPublicBranding().then((r) => r.data),
+    queryKey: ["public-branding", storeSlug],
+    queryFn: () => getPublicBranding(storeSlug).then((r) => r.data),
   });
-  const brandName = branding?.business_name || "Tanisi";
+  const brandName = branding?.business_name || "Velora";
 
   const doLogin = async (email: string, password: string) => {
     setLoading(true);
@@ -91,7 +105,7 @@ export default function Login() {
     }
   };
 
-  const quickLogin = (role: "admin" | "staff") => {
+  const quickLogin = (role: "superadmin" | "admin" | "staff") => {
     const creds = DEMO_ACCOUNTS[role];
     form.setFieldsValue(creds);
     setQuickRole(role);
@@ -232,19 +246,37 @@ export default function Login() {
             Sign in to continue to {brandName} ERP
           </Typography.Text>
 
-          <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+          <Typography.Text type="secondary" style={{ display: "block", marginBottom: 10, fontSize: 11, textAlign: "center", letterSpacing: 0.5 }}>
+            DEMO LOGINS
+          </Typography.Text>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
             <Button
               block
+              size="small"
               icon={<CrownOutlined />}
-              loading={loading && quickRole === "admin"}
-              disabled={loading && quickRole !== "admin"}
-              onClick={() => quickLogin("admin")}
+              style={{ fontSize: 12 }}
+              loading={loading && quickRole === "superadmin"}
+              disabled={loading && quickRole !== "superadmin"}
+              onClick={() => quickLogin("superadmin")}
             >
               Super Admin
             </Button>
             <Button
               block
+              size="small"
+              icon={<CrownOutlined />}
+              style={{ fontSize: 12 }}
+              loading={loading && quickRole === "admin"}
+              disabled={loading && quickRole !== "admin"}
+              onClick={() => quickLogin("admin")}
+            >
+              Store Admin
+            </Button>
+            <Button
+              block
+              size="small"
               icon={<UserOutlined />}
+              style={{ fontSize: 12 }}
               loading={loading && quickRole === "staff"}
               disabled={loading && quickRole !== "staff"}
               onClick={() => quickLogin("staff")}
@@ -252,7 +284,7 @@ export default function Login() {
               Staff
             </Button>
           </div>
-          <Divider style={{ margin: "4px 0 24px", fontSize: 12, color: "#9a8b93" }}>or sign in manually</Divider>
+          <Divider style={{ margin: "16px 0 24px", fontSize: 12, color: "#9a8b93" }}>or sign in manually</Divider>
 
           <Form form={form} layout="vertical" onFinish={(values) => doLogin(values.email, values.password)}>
             <Form.Item name="email" label="Email" rules={[{ required: true, type: "email" }]}>
@@ -274,9 +306,15 @@ export default function Login() {
               </Button>
             </Form.Item>
           </Form>
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            Demo — Admin: admin@tanisi.demo.com / admin123 · Staff: staff@tanisi.demo.com / staff123
-          </Typography.Text>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              New store?{" "}
+              <Link to="/signup" style={{ color: BRAND, fontWeight: 600 }}>Sign up free</Link>
+            </Typography.Text>
+            <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+              superadmin@velora.dev / velora2024!
+            </Typography.Text>
+          </div>
         </Card>
       </Col>
     </Row>
