@@ -3,11 +3,13 @@ import uuid
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, require_admin
+from app.api.deps import get_current_user, get_db, require_admin
 from app.core.config import settings as env_settings
 from app.models.settings import AppSettings
+from app.models.user import User
 from app.schemas.settings import AppSettingsOut, AppSettingsUpdate, PublicBrandingOut
 from app.services.app_settings import get_app_settings
+from app.services.audit import log_activity
 
 router = APIRouter(prefix="/api/settings", tags=["settings"], dependencies=[Depends(require_admin)])
 
@@ -39,12 +41,20 @@ def get_settings(db: Session = Depends(get_db)):
 
 
 @router.patch("", response_model=AppSettingsOut)
-def update_settings(payload: AppSettingsUpdate, db: Session = Depends(get_db)):
+def update_settings(
+    payload: AppSettingsUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
     s = get_app_settings(db)
+    changed_fields = []
     for field, value in payload.model_dump(exclude_unset=True).items():
         if value is None or value == "":
             continue
         setattr(s, field, value)
+        changed_fields.append(field)
+    log_activity(
+        db, action="settings.update", tenant_id=s.tenant_id, user_id=current_user.id,
+        entity_type="AppSettings", entity_id=s.id, details={"fields": changed_fields},
+    )
     db.commit()
     db.refresh(s)
     return _to_out(s)

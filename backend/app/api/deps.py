@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import decode_access_token
-from app.core.tenant_context import set_current_tenant_id
 from app.models.user import User, UserRole
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
@@ -15,6 +14,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 def get_current_user(
     token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:
+    """Tenant context (see app.core.tenant_context) is NOT set here - it's set
+    by app.middleware.tenant.TenantContextMiddleware, before FastAPI's
+    dependency injection even begins. That's a deliberate placement, not
+    redundancy: sync dependencies each run in their own threadpool call with
+    their own ContextVar snapshot, so a mutation made in this function would
+    never be visible to the endpoint body that actually runs the query. This
+    function only authenticates - it doesn't and can't reliably scope.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -29,9 +36,6 @@ def get_current_user(
     user = db.get(User, int(payload["sub"]))
     if user is None or not user.is_active:
         raise credentials_exception
-    # Every other query this request makes now auto-filters/auto-stamps by this
-    # tenant (see app.core.tenant_context) - callers never pass tenant_id.
-    set_current_tenant_id(user.tenant_id)
     return user
 
 
@@ -46,3 +50,25 @@ def require_roles(*roles: UserRole):
 
 require_admin = require_roles(UserRole.ADMIN)
 require_manager_up = require_roles(UserRole.ADMIN, UserRole.MANAGER)
+
+
+def require_super_admin(user: User = Depends(get_current_user)) -> User:
+    if user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Super Admin access required")
+    return user
+
+
+def require_permission(code: str):
+    """Capability-based alternative to require_roles(), for the new roles
+    (tenant_owner/sales/inventory/viewer) that don't fit the original rank
+    ladder - see app.permissions.catalog for what each role is granted.
+    """
+
+    def checker(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> User:
+        from app.permissions.service import has_permission
+
+        if not has_permission(db, user, code):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Not enough permissions")
+        return user
+
+    return checker

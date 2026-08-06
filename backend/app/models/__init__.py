@@ -25,6 +25,8 @@ from app.models.payroll import Payslip, PayslipStatus, StaffSalary
 from app.models.product import Category, ImageAngle, Product, ProductImage, ProductVariant
 from app.models.purchase import PurchaseOrder, PurchaseOrderItem
 from app.models.returns import ExchangeItem, RefundMode, Return, ReturnItem
+from app.models.audit import AuditLog
+from app.models.permission import Permission, RolePermission
 from app.models.sale import Sale, SaleItem
 from app.models.settings import AppSettings
 from app.models.tenant import SubscriptionPlanName, SubscriptionStatus, Tenant
@@ -37,6 +39,7 @@ __all__ = [
     "Alteration",
     "AlterationStatus",
     "AppSettings",
+    "AuditLog",
     "Attendance",
     "AttendanceStatus",
     "BalanceType",
@@ -66,6 +69,7 @@ __all__ = [
     "PaperSize",
     "Payslip",
     "PayslipStatus",
+    "Permission",
     "Product",
     "ProductImage",
     "ProductVariant",
@@ -74,6 +78,7 @@ __all__ = [
     "RefundMode",
     "Return",
     "ReturnItem",
+    "RolePermission",
     "Sale",
     "SaleItem",
     "SegmentType",

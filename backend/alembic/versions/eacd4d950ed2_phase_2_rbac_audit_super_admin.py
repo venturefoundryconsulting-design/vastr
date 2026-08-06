@@ -1,0 +1,115 @@
+"""phase 2 rbac audit super admin
+
+Revision ID: eacd4d950ed2
+Revises: b0ec8901d716
+Create Date: 2026-08-06 21:25:54.730085
+
+Adds the 5 new UserRole enum values (Postgres requires ALTER TYPE ... ADD
+VALUE to run outside the migration's normal transaction, hence the
+autocommit_block), the Permission/RolePermission tables plus their seed
+data (from app.permissions.catalog - the single source of truth for both
+the running app and this one-time seed), and the audit_logs table.
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
+# revision identifiers, used by Alembic.
+revision: str = 'eacd4d950ed2'
+down_revision: Union[str, None] = 'b0ec8901d716'
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+NEW_ROLES = ("SUPER_ADMIN", "TENANT_OWNER", "SALES", "INVENTORY", "VIEWER")
+
+
+def upgrade() -> None:
+    # --- 1. Extend the userrole enum (must run outside the tx block) ---
+    with op.get_context().autocommit_block():
+        for value in NEW_ROLES:
+            op.execute(f"ALTER TYPE userrole ADD VALUE IF NOT EXISTS '{value}'")
+
+    # --- 2. New tables ---
+    op.create_table('permissions',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('code', sa.String(length=80), nullable=False),
+    sa.Column('category', sa.String(length=40), nullable=False),
+    sa.Column('description', sa.String(length=200), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_permissions_code'), 'permissions', ['code'], unique=True)
+    op.create_table('role_permissions',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('role', postgresql.ENUM('SUPER_ADMIN', 'TENANT_OWNER', 'ADMIN', 'MANAGER', 'SALES', 'INVENTORY', 'OUTLET_STAFF', 'VIEWER', name='userrole', create_type=False), nullable=False),
+    sa.Column('permission_id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['permission_id'], ['permissions.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('role', 'permission_id', name='uq_role_permission')
+    )
+    op.create_index(op.f('ix_role_permissions_role'), 'role_permissions', ['role'], unique=False)
+    op.create_table('audit_logs',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('tenant_id', sa.Integer(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('action', sa.String(length=80), nullable=False),
+    sa.Column('entity_type', sa.String(length=60), nullable=True),
+    sa.Column('entity_id', sa.Integer(), nullable=True),
+    sa.Column('details', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_audit_logs_action'), 'audit_logs', ['action'], unique=False)
+    op.create_index(op.f('ix_audit_logs_tenant_id'), 'audit_logs', ['tenant_id'], unique=False)
+    op.create_index(op.f('ix_audit_logs_user_id'), 'audit_logs', ['user_id'], unique=False)
+
+    # --- 3. Seed the permission catalog + default role grants ---
+    from app.permissions.catalog import PERMISSION_CATALOG, ROLE_GRANTS
+
+    permissions_t = sa.table(
+        "permissions", sa.column("id", sa.Integer), sa.column("code", sa.String),
+        sa.column("category", sa.String), sa.column("description", sa.String),
+    )
+    role_permissions_t = sa.table(
+        "role_permissions", sa.column("role", sa.String), sa.column("permission_id", sa.Integer),
+    )
+
+    bind = op.get_bind()
+    code_to_id: dict[str, int] = {}
+    for code, category, description in PERMISSION_CATALOG:
+        result = bind.execute(
+            permissions_t.insert().values(code=code, category=category, description=description).returning(permissions_t.c.id)
+        )
+        code_to_id[code] = result.scalar_one()
+
+    grant_rows = [
+        {"role": role.value.upper(), "permission_id": code_to_id[code]}
+        for role, codes in ROLE_GRANTS.items()
+        for code in codes
+    ]
+    if grant_rows:
+        bind.execute(role_permissions_t.insert(), grant_rows)
+
+
+def downgrade() -> None:
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_audit_logs_user_id'), table_name='audit_logs')
+    op.drop_index(op.f('ix_audit_logs_tenant_id'), table_name='audit_logs')
+    op.drop_index(op.f('ix_audit_logs_action'), table_name='audit_logs')
+    op.drop_table('audit_logs')
+    op.drop_index(op.f('ix_role_permissions_role'), table_name='role_permissions')
+    op.drop_table('role_permissions')
+    op.drop_index(op.f('ix_permissions_code'), table_name='permissions')
+    op.drop_table('permissions')
+    # ### end Alembic commands ###
+    # Note: Postgres has no ALTER TYPE ... DROP VALUE - the 5 new enum labels
+    # are not removed on downgrade (harmless: nothing references them once the
+    # tables above are gone).

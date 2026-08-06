@@ -6,7 +6,7 @@ Safe to re-run - skips creation if the admin user already exists.
 
 from app.core.database import SessionLocal
 from app.core.security import hash_password
-from app.core.tenant_context import tenant_scope
+from app.core.tenant_context import register_tenant_isolation, tenant_scope
 from app.models.customer import Customer
 from app.models.inventory import StockLevel
 from app.models.outlet import Outlet
@@ -17,6 +17,10 @@ from app.models.vendor import Vendor, VendorProduct
 
 
 def run() -> None:
+    # This runs as a standalone script (python -m app.seed), not through
+    # app.main, so the auto-filter/auto-stamp events (see
+    # app.core.tenant_context) aren't registered yet unless done here.
+    register_tenant_isolation()
     db = SessionLocal()
     try:
         if db.query(User).filter(User.email == "admin@tanisi.demo.com").first():

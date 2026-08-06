@@ -17,6 +17,7 @@ from app.schemas.sale import BarcodeLookupResult, ReceiptSendResult, SaleCreate,
 from app.services import email as email_service
 from app.services import sms as sms_service
 from app.services.app_settings import get_app_settings
+from app.services.audit import log_activity
 from app.services.customer import adjust_credit_balance, adjust_loyalty_points
 from app.services.discounts import apply_coupon, find_best_automatic_discount
 from app.services.export import ExportFormat, build_export_response
@@ -378,6 +379,11 @@ def checkout(payload: SaleCreate, db: Session = Depends(get_db), user: User = De
     if discount_rule:
         discount_rule.times_used += 1
 
+    log_activity(
+        db, action="sale.create", tenant_id=user.tenant_id, user_id=user.id,
+        entity_type="Sale", entity_id=sale.id,
+        details={"invoice_number": sale.invoice_number, "total": sale.total},
+    )
     db.commit()
     return _to_out(_get_or_404(db, sale.id))
 

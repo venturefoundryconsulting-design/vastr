@@ -11,6 +11,7 @@ from app.schemas.inventory import (
     StockLevelDetail,
     StockMovementOut,
 )
+from app.services.audit import log_activity
 from app.services.export import ExportFormat, build_export_response
 from app.services.inventory import apply_stock_delta
 
@@ -107,6 +108,12 @@ def adjust_stock(
         movement_type=MovementType.ADJUSTMENT,
         note=payload.note,
         created_by_id=user.id,
+    )
+    db.flush()
+    log_activity(
+        db, action="inventory.adjust", tenant_id=user.tenant_id, user_id=user.id,
+        entity_type="StockMovement", entity_id=movement.id,
+        details={"variant_id": payload.variant_id, "outlet_id": payload.outlet_id, "delta": payload.quantity_delta},
     )
     db.commit()
     db.refresh(movement)

@@ -6,8 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
+from app.core.tenant_context import register_tenant_isolation
+from app.middleware.tenant import TenantContextMiddleware
 from app.services.campaign_scheduler import campaign_scheduler_loop
 from app.routers import (
+    admin,
     alterations,
     auth,
     campaigns,
@@ -42,6 +45,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
+register_tenant_isolation()
 
 app.add_middleware(
     CORSMiddleware,
@@ -50,8 +54,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(TenantContextMiddleware)
 
 app.include_router(auth.router)
+app.include_router(admin.router)
 app.include_router(users.router)
 app.include_router(outlets.router)
 app.include_router(products.router)

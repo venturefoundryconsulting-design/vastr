@@ -8,9 +8,19 @@ from app.models.mixins import TimestampMixin
 
 
 class UserRole(str, enum.Enum):
+    # Platform-level - not a member of any tenant (see User.tenant_id below).
+    SUPER_ADMIN = "super_admin"
+    # Tenant-scoped roles. ADMIN/MANAGER/OUTLET_STAFF are the original three and
+    # their relative rank (see frontend src/utils/roles.ts) is unchanged - the
+    # four new ones are resolved through the permission catalog instead
+    # (app.permissions), not folded into that rank ladder.
+    TENANT_OWNER = "tenant_owner"
     ADMIN = "admin"
     MANAGER = "manager"
+    SALES = "sales"
+    INVENTORY = "inventory"
     OUTLET_STAFF = "outlet_staff"
+    VIEWER = "viewer"
 
 
 class User(Base, TimestampMixin):

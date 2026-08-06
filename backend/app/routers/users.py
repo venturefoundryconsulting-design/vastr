@@ -5,6 +5,7 @@ from app.api.deps import get_db, require_admin
 from app.core.security import hash_password
 from app.models.user import User
 from app.schemas.user import UserCreate, UserOut, UserUpdate
+from app.services.audit import log_activity
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -23,6 +24,11 @@ def create_user(
     data = payload.model_dump(exclude={"password"})
     user = User(**data, hashed_password=hash_password(payload.password), tenant_id=current_user.tenant_id)
     db.add(user)
+    db.flush()
+    log_activity(
+        db, action="user.create", tenant_id=current_user.tenant_id, user_id=current_user.id,
+        entity_type="User", entity_id=user.id, details={"email": user.email, "role": user.role.value},
+    )
     db.commit()
     db.refresh(user)
     return user
@@ -44,6 +50,10 @@ def update_user(
         setattr(user, field, value)
     if password:
         user.hashed_password = hash_password(password)
+    log_activity(
+        db, action="user.update", tenant_id=current_user.tenant_id, user_id=current_user.id,
+        entity_type="User", entity_id=user.id, details={"fields": list(data.keys())},
+    )
     db.commit()
     db.refresh(user)
     return user

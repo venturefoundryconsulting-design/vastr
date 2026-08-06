@@ -19,10 +19,3 @@ def get_db() -> Generator:
         yield db
     finally:
         db.close()
-
-
-# Registered here (not in tenant_context.py itself) so importing app.core.database
-# is enough to activate isolation - avoids relying on import order elsewhere.
-from app.core.tenant_context import register_tenant_isolation  # noqa: E402
-
-register_tenant_isolation()

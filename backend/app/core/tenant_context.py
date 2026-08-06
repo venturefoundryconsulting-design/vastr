@@ -24,6 +24,9 @@ from app.models.mixins import TenantMixin
 
 _current_tenant_id: ContextVar[int | None] = ContextVar("current_tenant_id", default=None)
 
+# Matches no real tenant (ids start at 1) - see set_authenticated_no_tenant().
+_DENIED = -1
+
 
 def get_current_tenant_id() -> int | None:
     return _current_tenant_id.get()
@@ -33,12 +36,25 @@ def set_current_tenant_id(tenant_id: int | None) -> None:
     _current_tenant_id.set(tenant_id)
 
 
+def set_authenticated_no_tenant() -> None:
+    """For a logged-in user who genuinely has no tenant (Super Admins - see
+    User.tenant_id). Deliberately NOT the same as an unset context: this
+    denies every tenant-scoped row by default (renders `tenant_id = -1`,
+    which matches nothing) rather than skipping the filter, so a Super
+    Admin's token can't see cross-tenant data just by hitting an ordinary
+    endpoint. Only the Super Admin router explicitly opts back into
+    unfiltered access via tenant_scope(None) for its own request.
+    """
+    _current_tenant_id.set(_DENIED)
+
+
 @contextmanager
 def tenant_scope(tenant_id: int | None):
     """Run a block of code scoped to a specific tenant (or None = unfiltered).
 
-    Used outside the request/response cycle - the scheduler, seed scripts,
-    the Super Admin API - anywhere there's no JWT to derive it from.
+    Used outside the request/response cycle - the scheduler, seed scripts -
+    and by the Super Admin API to deliberately go cross-tenant for its own
+    request after require_super_admin has already verified the caller.
     """
     token = _current_tenant_id.set(tenant_id)
     try:
@@ -47,8 +63,19 @@ def tenant_scope(tenant_id: int | None):
         _current_tenant_id.reset(token)
 
 
+_isolation_registered = False
+
+
 def register_tenant_isolation() -> None:
-    """Call once at startup (see app.core.database) to wire the filter+stamp events."""
+    """Call once at process startup (app.main, and standalone scripts like
+    app.seed that use the DB outside the FastAPI app) to wire the filter+
+    stamp events. Idempotent - event.listens_for would otherwise double-attach
+    if called more than once in the same process (e.g. tests re-importing).
+    """
+    global _isolation_registered
+    if _isolation_registered:
+        return
+    _isolation_registered = True
 
     @event.listens_for(Session, "do_orm_execute")
     def _filter_by_tenant(execute_state):
