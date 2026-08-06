@@ -1,0 +1,16 @@
+# Stage 1: build the static SPA
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+# VITE_API_URL / VITE_BASE_PATH come from .env.production (committed, no
+# secrets - see that file). Override at build time with --build-arg if this
+# deployment needs a different path/domain layout.
+RUN npm run build
+
+# Stage 2: serve the build + reverse-proxy /api and /uploads to the backend,
+# with automatic Let's Encrypt HTTPS - no separate certbot/nginx needed.
+FROM caddy:2-alpine
+COPY --from=build /app/dist /usr/share/caddy
+COPY Caddyfile /etc/caddy/Caddyfile

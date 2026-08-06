@@ -12,6 +12,7 @@ frontend/tsconfig.tsbuildinfo
 # Env / secrets
 backend/.env
 .env
+.env.prod
 .env.*.local
 
 # Local data / logs
