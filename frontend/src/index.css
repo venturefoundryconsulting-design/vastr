@@ -1,0 +1,90 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #f7f5f8;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(157, 23, 77, 0.18);
+}
+
+/* Visible keyboard-focus ring, brand-colored - antd components already get a
+   focus shadow from colorPrimary, but plain/native elements (e.g. the sidebar's
+   text buttons) don't, so this covers the gap without doubling up on antd's own. */
+:focus-visible {
+  outline: 2px solid rgba(157, 23, 77, 0.55);
+  outline-offset: 2px;
+}
+
+/* Headings use Lexend (a display-weight geometric sans built for readability at
+   larger sizes) while body copy stays on Inter — a deliberate two-font system
+   rather than one font doing both jobs. */
+h1, h2, h3, h4, h5,
+.ant-typography h1, .ant-typography h2, .ant-typography h3, .ant-typography h4, .ant-typography h5,
+.ant-card-head-title,
+.ant-modal-title {
+  /* AntD v5 injects its own typography rules via cssinjs *after* this
+     stylesheet, so plain specificity loses the cascade regardless of
+     selector order here - !important is the documented way round it. */
+  font-family: "Lexend", "Inter", -apple-system, sans-serif !important;
+  letter-spacing: -0.01em;
+}
+
+/* Slim, unobtrusive scrollbars everywhere */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(34, 16, 25, 0.18);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 16, 25, 0.32);
+}
+
+.pos-cart-row:hover {
+  background: #fdf5f8;
+}
+
+/* Card lift-on-hover for clickable dashboard/summary cards */
+.tanisi-card-link {
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+  cursor: pointer;
+}
+.tanisi-card-link:hover {
+  box-shadow: 0 8px 24px rgba(34, 16, 25, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Table rows read as clickable where the app wires an onRow handler */
+.ant-table-tbody > tr[class*="ant-table-row"]:hover > td {
+  cursor: pointer;
+}
+
+/* Login page entrance animations - staggered fade/slide-up */
+@keyframes loginFadeInUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.login-animate {
+  opacity: 0;
+  animation: loginFadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.login-animate-1 { animation-delay: 0.05s; }
+.login-animate-2 { animation-delay: 0.2s; }
+.login-animate-3 { animation-delay: 0.35s; }
+.login-animate-card { animation-delay: 0.15s; }

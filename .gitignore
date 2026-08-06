@@ -1,0 +1,31 @@
+# Python
+backend/venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+
+# Env / secrets
+backend/.env
+.env
+.env.*.local
+
+# Local data / logs
+pgdata/
+backend/uploads/
+*.log
+backend/*.pdf
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude Code local/machine-specific config (not project source)
+.claude/settings.local.json
+.claude/skills/
