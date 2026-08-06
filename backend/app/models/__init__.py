@@ -29,6 +29,7 @@ from app.models.audit import AuditLog
 from app.models.permission import Permission, RolePermission
 from app.models.sale import Sale, SaleItem
 from app.models.settings import AppSettings
+from app.models.subscription_plan import SubscriptionPlan
 from app.models.tenant import SubscriptionPlanName, SubscriptionStatus, Tenant
 from app.models.transfer import StockTransfer, StockTransferItem
 from app.models.user import User
@@ -89,6 +90,7 @@ __all__ = [
     "StockMovement",
     "StockTransfer",
     "StockTransferItem",
+    "SubscriptionPlan",
     "SubscriptionPlanName",
     "SubscriptionStatus",
     "Tenant",
