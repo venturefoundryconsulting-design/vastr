@@ -1,6 +1,7 @@
 import enum
 
-from sqlalchemy import JSON, Boolean, DateTime, Enum, Integer, String
+from sqlalchemy import Boolean, DateTime, Enum, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -51,7 +52,7 @@ class EmailProvider(Base, TimestampMixin):
 
     # Provider-specific extras that don't fit the common shape (e.g. EmailJS's
     # service_id/template_id) - keeps this table stable as new providers are added.
-    extra_config: Mapped[dict] = mapped_column(JSON, default=dict)
+    extra_config: Mapped[dict] = mapped_column(JSONB, default=dict)
 
     last_test_status: Mapped[str | None] = mapped_column(String(20), default=None)
     last_test_at: Mapped["DateTime | None"] = mapped_column(DateTime(timezone=True), default=None)
@@ -72,7 +73,7 @@ class SmsProviderConfig(Base, TimestampMixin):
     auth_token: Mapped[str | None] = mapped_column(String(500), default=None)
     sender_id: Mapped[str | None] = mapped_column(String(40), default=None)
 
-    extra_config: Mapped[dict] = mapped_column(JSON, default=dict)
+    extra_config: Mapped[dict] = mapped_column(JSONB, default=dict)
 
     last_test_status: Mapped[str | None] = mapped_column(String(20), default=None)
     last_test_at: Mapped["DateTime | None"] = mapped_column(DateTime(timezone=True), default=None)

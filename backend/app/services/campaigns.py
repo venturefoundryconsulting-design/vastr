@@ -42,11 +42,7 @@ def resolve_segment(db: Session, params: SegmentParams) -> list[Customer]:
     if params.segment_type == SegmentType.TAG:
         if not params.segment_tag:
             return []
-        return (
-            base.filter(func.json_contains(Customer.tags, func.json_quote(params.segment_tag)))
-            .order_by(Customer.name)
-            .all()
-        )
+        return base.filter(Customer.tags.any(params.segment_tag)).order_by(Customer.name).all()
 
     if params.segment_type == SegmentType.BIRTHDAY_MONTH:
         current_month = datetime.now(timezone.utc).month

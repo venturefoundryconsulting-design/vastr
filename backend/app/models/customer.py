@@ -1,6 +1,7 @@
 import enum
 
-from sqlalchemy import JSON, Boolean, Date, Enum, ForeignKey, Numeric, String
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Numeric, String
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -23,13 +24,10 @@ class Customer(Base, TimestampMixin):
     birthday: Mapped["Date | None"] = mapped_column(Date, default=None)
     anniversary: Mapped["Date | None"] = mapped_column(Date, default=None)
 
-    # JSON array of strings - portable across Postgres/MySQL, unlike Postgres's native
-    # ARRAY type. Tag matching uses func.json_contains() (see routers/customers.py,
-    # services/campaigns.py) instead of the Postgres-only .any() operator.
-    preferred_sizes: Mapped[list[str]] = mapped_column(JSON, default=list)
-    preferred_colors: Mapped[list[str]] = mapped_column(JSON, default=list)
-    favorite_brands: Mapped[list[str]] = mapped_column(JSON, default=list)
-    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    preferred_sizes: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    preferred_colors: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    favorite_brands: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    tags: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
 
     notes: Mapped[str | None] = mapped_column(String(2000), default=None)
 

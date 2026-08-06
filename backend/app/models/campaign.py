@@ -1,6 +1,7 @@
 import enum
 
-from sqlalchemy import JSON, DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -63,7 +64,7 @@ class Campaign(Base, TimestampMixin):
     offer_code: Mapped[str | None] = mapped_column(String(40), default=None)
     product_name: Mapped[str | None] = mapped_column(String(200), default=None)
     # List of {"type": "url"|"phone"|"quick_reply", "label": str, "value": str}, admin-configured, max 3.
-    buttons: Mapped[list | None] = mapped_column(JSON, default=None)
+    buttons: Mapped[list | None] = mapped_column(JSONB, default=None)
 
     scheduled_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), default=None)
     status: Mapped[CampaignStatus] = mapped_column(Enum(CampaignStatus), default=CampaignStatus.SENT)

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_current_user, get_db, require_manager_up
@@ -44,7 +43,7 @@ def list_customers(
             (Customer.name.ilike(like)) | (Customer.phone.ilike(like)) | (Customer.email.ilike(like))
         )
     if tag:
-        query = query.filter(func.json_contains(Customer.tags, func.json_quote(tag)))
+        query = query.filter(Customer.tags.any(tag))
     return query.order_by(Customer.name).limit(50).all()
 
 
@@ -63,7 +62,7 @@ def export_customers(
             (Customer.name.ilike(like)) | (Customer.phone.ilike(like)) | (Customer.email.ilike(like))
         )
     if tag:
-        query = query.filter(func.json_contains(Customer.tags, func.json_quote(tag)))
+        query = query.filter(Customer.tags.any(tag))
     customers = query.order_by(Customer.name).all()
 
     rows = [
