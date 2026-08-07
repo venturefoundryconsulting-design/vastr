@@ -126,7 +126,7 @@ export default function Overview() {
             <Statistic
               title="New signups (30 days)"
               value={data?.new_signups_30d ?? 0}
-              icon={<TeamOutlined />}
+              prefix={<TeamOutlined style={{ fontSize: 14 }} />}
             />
           </Card>
         </Col>

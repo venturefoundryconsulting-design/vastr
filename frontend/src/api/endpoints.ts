@@ -44,6 +44,7 @@ import type {
   ProductImage,
   PurchaseOrder,
   CreateOrderResponse,
+  VerifyPaymentRequest,
   GlobalAuditLogEntry,
   LandingContent,
   LandingContentUpdate,
