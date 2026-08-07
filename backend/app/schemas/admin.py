@@ -77,3 +77,51 @@ class AuditLogOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class GlobalAuditLogOut(AuditLogOut):
+    tenant_name: str | None = None
+    user_name: str | None = None
+
+
+class PlanCountOut(BaseModel):
+    plan: SubscriptionPlanName
+    count: int
+
+
+class RecentSignupOut(BaseModel):
+    id: int
+    company_name: str
+    slug: str
+    subscription_plan: SubscriptionPlanName
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PlatformOverviewOut(BaseModel):
+    total_tenants: int
+    active_tenants: int
+    trialing_tenants: int
+    paying_tenants: int
+    suspended_tenants: int
+    new_signups_7d: int
+    new_signups_30d: int
+    estimated_arr: float
+    plan_breakdown: list[PlanCountOut]
+    recent_signups: list[RecentSignupOut]
+
+
+class PaymentOut(BaseModel):
+    id: int
+    tenant_id: int | None
+    tenant_name: str | None = None
+    plan: str
+    amount: float
+    currency: str
+    status: str
+    razorpay_order_id: str
+    razorpay_payment_id: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

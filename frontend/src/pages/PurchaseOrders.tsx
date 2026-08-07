@@ -179,7 +179,7 @@ export default function PurchaseOrders() {
         )}
       </Card>
 
-      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={pos} pagination={{ pageSize: 15 }} />
+      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={pos} pagination={{ pageSize: 15 }} scroll={{ x: "max-content" }} />
 
       <Modal
         title="New Purchase Order"

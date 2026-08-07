@@ -1,42 +1,26 @@
-import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import { CheckOutlined, CloseOutlined, MailOutlined } from "@ant-design/icons";
 import { Button, Card, Typography } from "antd";
 
 export interface PlanDef {
-  key: "free" | "starter" | "professional" | "enterprise";
+  key: "starter" | "professional" | "enterprise";
   name: string;
   price: string;
   period: string;
   tagline: string;
   highlight?: boolean;
   trialNote?: string;
+  contactSales?: boolean;
   features: { label: string; included: boolean }[];
 }
 
 export const PLANS: PlanDef[] = [
   {
-    key: "free",
-    name: "Free Trial",
-    price: "₹0",
-    period: "30 days",
-    tagline: "Try everything, no card required",
-    trialNote: "All features unlocked during trial",
-    features: [
-      { label: "Point of Sale", included: true },
-      { label: "Inventory & Products", included: true },
-      { label: "Customer CRM", included: true },
-      { label: "1 outlet, up to 2 users", included: true },
-      { label: "Sales Reports", included: false },
-      { label: "WhatsApp Marketing", included: false },
-      { label: "HR & Payroll", included: false },
-      { label: "Multi-outlet", included: false },
-    ],
-  },
-  {
     key: "starter",
     name: "Starter",
-    price: "₹2,000",
+    price: "₹1,999",
     period: "per year",
     tagline: "Everything a single-store needs",
+    trialNote: "30-day free trial - every feature unlocked, no card required",
     features: [
       { label: "Point of Sale", included: true },
       { label: "Inventory & Products", included: true },
@@ -51,10 +35,11 @@ export const PLANS: PlanDef[] = [
   {
     key: "professional",
     name: "Professional",
-    price: "₹5,000",
+    price: "₹4,999",
     period: "per year",
     tagline: "Growing stores with a team",
     highlight: true,
+    trialNote: "30-day free trial included",
     features: [
       { label: "Point of Sale", included: true },
       { label: "Inventory & Products", included: true },
@@ -69,9 +54,10 @@ export const PLANS: PlanDef[] = [
   {
     key: "enterprise",
     name: "Enterprise",
-    price: "₹10,000",
-    period: "per year",
+    price: "Custom",
+    period: "pricing",
     tagline: "Unlimited everything, always",
+    contactSales: true,
     features: [
       { label: "Point of Sale", included: true },
       { label: "Inventory & Products", included: true },
@@ -90,16 +76,28 @@ const BRAND = "#9d174d";
 interface PricingCardsProps {
   selectedPlan?: string;
   onSelect?: (plan: PlanDef) => void;
+  onContactSales?: () => void;
   ctaLabel?: string;
   compact?: boolean;
 }
 
-export default function PricingCards({ selectedPlan, onSelect, ctaLabel = "Get started", compact = false }: PricingCardsProps) {
+export default function PricingCards({
+  selectedPlan,
+  onSelect,
+  onContactSales,
+  ctaLabel = "Get started",
+  compact = false,
+}: PricingCardsProps) {
+  const handleContactSales = () => {
+    if (onContactSales) onContactSales();
+    else window.location.href = "mailto:hello@vastr.space?subject=Enterprise plan enquiry";
+  };
+
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: compact ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+        gridTemplateColumns: `repeat(auto-fit, minmax(${compact ? 200 : 240}px, 1fr))`,
         gap: 20,
         width: "100%",
       }}
@@ -109,7 +107,7 @@ export default function PricingCards({ selectedPlan, onSelect, ctaLabel = "Get s
         return (
           <Card
             key={plan.key}
-            onClick={() => onSelect?.(plan)}
+            onClick={() => (plan.contactSales ? handleContactSales() : onSelect?.(plan))}
             style={{
               borderRadius: 16,
               border: selected
@@ -122,7 +120,7 @@ export default function PricingCards({ selectedPlan, onSelect, ctaLabel = "Get s
                 : selected
                 ? "0 4px 20px rgba(157,23,77,0.18)"
                 : "0 2px 8px rgba(0,0,0,0.06)",
-              cursor: onSelect ? "pointer" : "default",
+              cursor: onSelect || plan.contactSales ? "pointer" : "default",
               position: "relative",
               transition: "box-shadow 0.2s, border-color 0.2s",
               background: selected ? "#fef6fa" : "#fff",
@@ -167,18 +165,35 @@ export default function PricingCards({ selectedPlan, onSelect, ctaLabel = "Get s
               </Typography.Text>
             )}
 
-            {onSelect && (
+            {plan.contactSales ? (
               <Button
-                type={plan.highlight || selected ? "primary" : "default"}
                 block
+                icon={<MailOutlined />}
                 style={{ marginBottom: 16, marginTop: 8, borderRadius: 10 }}
-                onClick={(e) => { e.stopPropagation(); onSelect(plan); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleContactSales();
+                }}
               >
-                {selected ? "Selected" : ctaLabel}
+                Contact us
               </Button>
+            ) : (
+              onSelect && (
+                <Button
+                  type={plan.highlight || selected ? "primary" : "default"}
+                  block
+                  style={{ marginBottom: 16, marginTop: 8, borderRadius: 10 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(plan);
+                  }}
+                >
+                  {selected ? "Selected" : ctaLabel}
+                </Button>
+              )
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: onSelect ? 0 : 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: onSelect || plan.contactSales ? 0 : 16 }}>
               {plan.features.map((f) => (
                 <div key={f.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {f.included ? (

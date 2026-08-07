@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -7,6 +8,7 @@ import {
   Descriptions,
   Form,
   Input,
+  Modal,
   Select,
   Space,
   Switch,
@@ -18,7 +20,17 @@ import {
   message,
 } from "antd";
 import { DeleteOutlined, UploadOutlined } from "@ant-design/icons";
-import { getAppSettings, listOutlets, removeLogo, updateAppSettings, updateMyTenant, updateOutlet, uploadLogo } from "../api/endpoints";
+import {
+  getAppSettings,
+  listOutlets,
+  listPresetLogos,
+  removeLogo,
+  selectPresetLogo,
+  updateAppSettings,
+  updateMyTenant,
+  updateOutlet,
+  uploadLogo,
+} from "../api/endpoints";
 import type { Outlet, PaperSize } from "../api/types";
 import { useTenant } from "../context/TenantContext";
 import EmailIntegrationsSettings from "./settings/EmailIntegrations";
@@ -70,6 +82,7 @@ function PrintingSettings() {
         loading={isLoading}
         dataSource={outlets}
         pagination={false}
+        scroll={{ x: "max-content" }}
         columns={[
           { title: "Outlet", dataIndex: "name" },
           {
@@ -143,6 +156,22 @@ function BusinessProfileSettings() {
     onError: (err: any) => message.error(err?.response?.data?.detail || "Failed to remove logo"),
   });
 
+  const [presetPickerOpen, setPresetPickerOpen] = useState(false);
+  const { data: presetLogos } = useQuery({
+    queryKey: ["preset-logos"],
+    queryFn: () => listPresetLogos().then((r) => r.data),
+    enabled: presetPickerOpen,
+  });
+  const selectPresetMutation = useMutation({
+    mutationFn: selectPresetLogo,
+    onSuccess: () => {
+      message.success("Logo updated");
+      invalidateBranding();
+      setPresetPickerOpen(false);
+    },
+    onError: (err: any) => message.error(err?.response?.data?.detail || "Failed to set logo"),
+  });
+
   if (isLoading || !settings) return null;
 
   return (
@@ -199,6 +228,7 @@ function BusinessProfileSettings() {
                 {settings.logo_url ? "Replace logo" : "Upload logo"}
               </Button>
             </Upload>
+            <Button onClick={() => setPresetPickerOpen(true)}>Choose from presets</Button>
             {settings.logo_url && (
               <Button danger icon={<DeleteOutlined />} loading={removeLogoMutation.isPending} onClick={() => removeLogoMutation.mutate()}>
                 Remove
@@ -207,6 +237,34 @@ function BusinessProfileSettings() {
           </Space>
         </Space>
       </Card>
+      <Modal
+        open={presetPickerOpen}
+        onCancel={() => setPresetPickerOpen(false)}
+        title="Choose a preset logo"
+        footer={null}
+      >
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          {(presetLogos || []).map((url) => (
+            <button
+              key={url}
+              type="button"
+              onClick={() => selectPresetMutation.mutate(url)}
+              disabled={selectPresetMutation.isPending}
+              style={{
+                width: "100%",
+                aspectRatio: "1 / 1",
+                borderRadius: 10,
+                border: settings.logo_url === url ? "2px solid #9d174d" : "1px solid #eee3ea",
+                background: "#faf7f8",
+                padding: 8,
+                cursor: "pointer",
+              }}
+            >
+              <img src={url} alt="Preset logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+            </button>
+          ))}
+        </div>
+      </Modal>
       <Card>
         <Form
           form={form}
@@ -350,7 +408,7 @@ function OrganizationSettings() {
         style={{ marginBottom: 16 }}
         message="This is separate from your Business Profile"
         description={
-          "Company name and theme color here control your Velora workspace identity (sidebar, buttons, " +
+          "Company name and theme color here control your Vastr workspace identity (sidebar, buttons, " +
           "links). Business Profile (the previous tab) controls what's printed on receipts and purchase " +
           "orders - the two can differ, e.g. a legal name vs. a storefront brand name."
         }

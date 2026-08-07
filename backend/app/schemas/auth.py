@@ -46,7 +46,7 @@ class RegisterRequest(BaseModel):
                 "Store URL must be 3-40 characters, lowercase letters, numbers and hyphens only, "
                 "and cannot start or end with a hyphen"
             )
-        if v in {"admin", "api", "www", "app", "velora", "platform", "static", "assets"}:
+        if v in {"admin", "api", "www", "app", "vastr", "platform", "static", "assets"}:
             raise ValueError("That store URL is reserved")
         return v
 
@@ -61,3 +61,12 @@ class RegisterRequest(BaseModel):
 class SlugAvailability(BaseModel):
     slug: str
     available: bool
+
+
+class RegisterResponse(BaseModel):
+    email: EmailStr
+    message: str = "Account created - check your email to verify and activate your store."
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr

@@ -71,7 +71,7 @@ export default function Transfers() {
         </Button>
       </Space>
 
-      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={transfers} pagination={{ pageSize: 15 }} />
+      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={transfers} pagination={{ pageSize: 15 }} scroll={{ x: "max-content" }} />
 
       <Modal
         title="New Stock Transfer"

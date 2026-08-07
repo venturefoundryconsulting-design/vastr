@@ -173,10 +173,15 @@ function EmailProviderCard({ provider }: { provider: EmailProviderOut }) {
               <Form.Item name="smtp_host" label="SMTP host" style={{ width: 240 }}>
                 <Input placeholder="smtp.example.com" />
               </Form.Item>
-              <Form.Item name="smtp_port" label="Port" style={{ width: 100 }}>
+              <Form.Item
+                name="smtp_port"
+                label="Port"
+                style={{ width: 100 }}
+                tooltip="465 = implicit SSL (auto-detected, TLS toggle ignored). 587 = STARTTLS - uses the toggle."
+              >
                 <InputNumber style={{ width: "100%" }} />
               </Form.Item>
-              <Form.Item name="smtp_use_tls" label="Use TLS" valuePropName="checked">
+              <Form.Item name="smtp_use_tls" label="Use TLS" valuePropName="checked" tooltip="Only applies on port 587/25. Port 465 always connects encrypted.">
                 <Switch />
               </Form.Item>
             </Space>

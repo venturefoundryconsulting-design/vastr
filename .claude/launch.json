@@ -21,7 +21,8 @@
         "--app-dir",
         "backend"
       ],
-      "port": 8000
+      "port": 8000,
+      "autoPort": false
     }
   ]
 }

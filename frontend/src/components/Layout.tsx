@@ -227,7 +227,18 @@ export default function Layout({ children }: { children: ReactNode }) {
         width={232}
         style={
           isMobile
-            ? { background: "#221019", position: "fixed", height: "100vh", insetInlineStart: 0, top: 0, zIndex: 100, display: "flex", flexDirection: "column" }
+            ? {
+                background: "#221019",
+                position: "fixed",
+                height: "100vh",
+                insetInlineStart: 0,
+                top: 0,
+                zIndex: 100,
+                display: "flex",
+                flexDirection: "column",
+                overflowY: "auto",
+                WebkitOverflowScrolling: "touch",
+              }
             : { background: "#221019", display: "flex", flexDirection: "column" }
         }
       >
@@ -238,7 +249,9 @@ export default function Layout({ children }: { children: ReactNode }) {
             gap: 10,
             padding: collapsed ? "20px 0" : "20px 20px",
             justifyContent: collapsed ? "center" : "flex-start",
+            cursor: "pointer",
           }}
+          onClick={() => navigate("/dashboard")}
         >
           {branding?.logo_url ? (
             <img
@@ -247,21 +260,11 @@ export default function Layout({ children }: { children: ReactNode }) {
               style={{ width: 34, height: 34, minWidth: 34, borderRadius: 10, objectFit: "contain", background: "#fff" }}
             />
           ) : (
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                minWidth: 34,
-                borderRadius: 10,
-                background: `linear-gradient(135deg, ${colorPrimary}, #c2185b)`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 2px 8px rgba(157, 23, 77, 0.45)",
-              }}
-            >
-              <ShopOutlined style={{ color: "#fff", fontSize: 17 }} />
-            </div>
+            <img
+              src="/vastr.png"
+              alt="Vastr"
+              style={{ width: 34, height: 34, minWidth: 34, borderRadius: 10, objectFit: "contain", boxShadow: "0 2px 8px rgba(157, 23, 77, 0.45)" }}
+            />
           )}
           {!collapsed && (
             <div style={{ lineHeight: 1.1, overflow: "hidden" }}>

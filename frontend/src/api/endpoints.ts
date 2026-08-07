@@ -43,8 +43,26 @@ import type {
   PublicBranding,
   ProductImage,
   PurchaseOrder,
+  CreateOrderResponse,
+  GlobalAuditLogEntry,
+  LandingContent,
+  LandingContentUpdate,
+  LegalPage,
+  LegalPageUpsert,
+  PlatformDomainConfig,
+  PlatformDomainConfigUpdate,
+  PlatformEmailConfig,
+  PlatformEmailConfigUpdate,
+  Payment,
+  PlatformOverview,
+  PlatformPaymentConfig,
+  PlatformPaymentConfigUpdate,
+  PlatformTestResult,
+  PlatformWebsiteConfig,
+  PlatformWebsiteConfigUpdate,
   ReceiptSendResult,
   RegisterRequest,
+  RegisterResponse,
   ReorderSuggestion,
   Return,
   Sale,
@@ -81,10 +99,16 @@ export const login = (email: string, password: string) =>
 export const getMe = () => apiClient.get<CurrentUser>("/api/auth/me");
 
 export const registerStore = (data: RegisterRequest) =>
-  apiClient.post<{ access_token: string; token_type: string }>("/api/auth/register", data);
+  apiClient.post<RegisterResponse>("/api/auth/register", data);
 
 export const checkSlug = (slug: string) =>
   apiClient.get<SlugAvailability>("/api/auth/check-slug", { params: { slug } });
+
+export const verifyEmail = (token: string) =>
+  apiClient.get<{ access_token: string; token_type: string }>("/api/auth/verify-email", { params: { token } });
+
+export const resendVerification = (email: string) =>
+  apiClient.post<{ message: string }>("/api/auth/resend-verification", { email });
 
 // ---- Outlets ----
 export const listOutlets = () => apiClient.get<Outlet[]>("/api/outlets");
@@ -342,6 +366,9 @@ export const uploadLogo = (file: File) => {
   });
 };
 export const removeLogo = () => apiClient.delete<AppSettings>("/api/settings/logo");
+export const listPresetLogos = () => apiClient.get<string[]>("/api/settings/logo/presets");
+export const selectPresetLogo = (url: string) =>
+  apiClient.put<AppSettings>("/api/settings/logo/preset", null, { params: { url } });
 
 export const getHardwareAiSettings = () => apiClient.get<HardwareAiSettings>("/api/settings/hardware-ai");
 export const updateHardwareAiSettings = (data: HardwareAiSettingsUpdate) =>
@@ -405,6 +432,50 @@ export const resetTenantUserPassword = (tenantId: number, userId: number, new_pa
   apiClient.post<{ ok: boolean }>(`/api/admin/tenants/${tenantId}/users/${userId}/reset-password`, {
     new_password,
   });
+export const getPlatformOverview = () => apiClient.get<PlatformOverview>("/api/admin/overview");
+export const getGlobalActivity = (limit = 100) =>
+  apiClient.get<GlobalAuditLogEntry[]>("/api/admin/activity", { params: { limit } });
+export const listPayments = (limit = 100) =>
+  apiClient.get<Payment[]>("/api/admin/payments", { params: { limit } });
+
+// ---- Super Admin: Global Settings (Payment / Email / Website / Domain) ----
+export const getPlatformEmailConfig = () => apiClient.get<PlatformEmailConfig>("/api/admin/settings/email");
+export const updatePlatformEmailConfig = (data: PlatformEmailConfigUpdate) =>
+  apiClient.patch<PlatformEmailConfig>("/api/admin/settings/email", data);
+export const testPlatformEmailConfig = (to_email: string) =>
+  apiClient.post<PlatformTestResult>("/api/admin/settings/email/test", { to_email });
+
+export const getPlatformPaymentConfig = () => apiClient.get<PlatformPaymentConfig>("/api/admin/settings/payment");
+export const updatePlatformPaymentConfig = (data: PlatformPaymentConfigUpdate) =>
+  apiClient.patch<PlatformPaymentConfig>("/api/admin/settings/payment", data);
+export const testPlatformPaymentConfig = () =>
+  apiClient.post<PlatformTestResult>("/api/admin/settings/payment/test");
+
+export const getPlatformWebsiteConfig = () => apiClient.get<PlatformWebsiteConfig>("/api/admin/settings/website");
+export const updatePlatformWebsiteConfig = (data: PlatformWebsiteConfigUpdate) =>
+  apiClient.patch<PlatformWebsiteConfig>("/api/admin/settings/website", data);
+
+export const getPlatformDomainConfig = () => apiClient.get<PlatformDomainConfig>("/api/admin/settings/domain");
+export const updatePlatformDomainConfig = (data: PlatformDomainConfigUpdate) =>
+  apiClient.patch<PlatformDomainConfig>("/api/admin/settings/domain", data);
+
+// ---- Super Admin: Landing Page CMS + legal pages ----
+export const getAdminLandingContent = () => apiClient.get<LandingContent>("/api/admin/landing-content");
+export const updateLandingContent = (data: LandingContentUpdate) =>
+  apiClient.patch<LandingContent>("/api/admin/landing-content", data);
+export const listAdminLegalPages = () => apiClient.get<LegalPage[]>("/api/admin/legal-pages");
+export const upsertLegalPage = (slug: string, data: LegalPageUpsert) =>
+  apiClient.put<LegalPage>(`/api/admin/legal-pages/${slug}`, data);
+
+// ---- Public: Landing Page content + legal pages ----
+export const getPublicLandingContent = () => apiClient.get<LandingContent>("/api/landing-content");
+export const getPublicLegalPage = (slug: string) => apiClient.get<LegalPage>(`/api/legal/${slug}`);
+
+// ---- Billing (Razorpay) ----
+export const createBillingOrder = (slug: string) =>
+  apiClient.post<CreateOrderResponse>("/api/billing/create-order", { slug });
+export const verifyBillingPayment = (data: VerifyPaymentRequest) =>
+  apiClient.post<{ ok: boolean }>("/api/billing/verify-payment", data);
 
 // ---- Tenant self-service (the tenant's own users, not Super Admin) ----
 export const getMyTenant = () => apiClient.get<TenantSelf>("/api/tenant/me");

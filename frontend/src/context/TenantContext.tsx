@@ -3,7 +3,7 @@ import { getMyTenant } from "../api/endpoints";
 import type { TenantSelf } from "../api/types";
 import { useAuth } from "./AuthContext";
 
-const DARK_MODE_KEY = "velora_dark_mode";
+const DARK_MODE_KEY = "vastr_dark_mode";
 
 interface TenantContextValue {
   tenant: TenantSelf | null;

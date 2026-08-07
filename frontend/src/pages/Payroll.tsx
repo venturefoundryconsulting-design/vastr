@@ -35,6 +35,7 @@ function SalarySetupTab() {
       loading={isLoading}
       dataSource={salaries}
       pagination={{ pageSize: 15 }}
+      scroll={{ x: "max-content" }}
       columns={[
         { title: "Staff", dataIndex: "staff_name" },
         {
@@ -141,6 +142,7 @@ function PayslipsTab() {
         loading={isLoading}
         dataSource={payslips}
         pagination={{ pageSize: 15 }}
+        scroll={{ x: "max-content" }}
         columns={[
           { title: "Staff", dataIndex: "staff_name" },
           { title: "Basic", dataIndex: "basic_amount", render: (v: number) => `₹${v.toFixed(2)}` },

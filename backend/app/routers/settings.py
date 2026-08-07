@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, require_admin
 from app.core.config import settings as env_settings
+from app.core.preset_logos import PRESET_LOGO_URLS
 from app.models.settings import AppSettings
 from app.models.tenant import Tenant
 from app.models.user import User
@@ -89,6 +90,26 @@ async def upload_logo(file: UploadFile = File(...), db: Session = Depends(get_db
         old_path = env_settings.tenant_upload_dir(s.tenant_id, "branding", old_url.rsplit("/", 1)[-1])
         old_path.unlink(missing_ok=True)
 
+    return _to_out(s)
+
+
+@router.get("/logo/presets", response_model=list[str])
+def list_preset_logos():
+    return PRESET_LOGO_URLS
+
+
+@router.put("/logo/preset", response_model=AppSettingsOut)
+def select_preset_logo(url: str, db: Session = Depends(get_db)):
+    if url not in PRESET_LOGO_URLS:
+        raise HTTPException(400, "Not a valid preset logo")
+    s = get_app_settings(db)
+    branding_prefix = f"{env_settings.PUBLIC_BASE_URL}/uploads/{env_settings.tenant_relative_path(s.tenant_id, 'branding')}/"
+    if s.logo_url and s.logo_url.startswith(branding_prefix):
+        old_path = env_settings.tenant_upload_dir(s.tenant_id, "branding", s.logo_url.rsplit("/", 1)[-1])
+        old_path.unlink(missing_ok=True)
+    s.logo_url = url
+    db.commit()
+    db.refresh(s)
     return _to_out(s)
 
 

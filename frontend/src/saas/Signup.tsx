@@ -1,16 +1,39 @@
-import { CheckCircleFilled, ShopOutlined } from "@ant-design/icons";
+import {
+  CheckCircleFilled, LockOutlined, MailOutlined, RocketOutlined,
+} from "@ant-design/icons";
 import { useMutation } from "@tanstack/react-query";
 import {
-  Button, Card, Col, Form, Input, Row, Steps, Typography, message,
+  Button, Card, Col, Divider, Form, Input, Row, Steps, Typography, message,
 } from "antd";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { checkSlug, registerStore } from "../api/endpoints";
+import { checkSlug, createBillingOrder, registerStore, resendVerification, verifyBillingPayment } from "../api/endpoints";
 import { useAuth } from "../context/AuthContext";
 import { BRAND, BRAND_DARK } from "../theme";
+import { homeRouteFor } from "../utils/roles";
 import PricingCards, { type PlanDef, PLANS } from "./Pricing";
 
-const STEPS = ["Store details", "Choose a plan", "You're in!"];
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
+  }
+}
+
+const STEPS = ["Store details", "Choose a plan", "Verify your email"];
+
+// FastAPI's error shape isn't always a plain string: HTTPException(...) gives a
+// string `detail`, but a 422 validation failure gives an array of
+// { msg, loc, type } objects - passing that array straight to antd's
+// message.error() crashes the whole app ("Objects are not valid as a React
+// child"), which is what made registration look "stuck".
+function extractErrorMessage(err: unknown, fallback: string): string {
+  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((d) => (typeof d === "string" ? d : d?.msg)).filter(Boolean).join("; ") || fallback;
+  }
+  return fallback;
+}
 
 function slugify(name: string): string {
   return name
@@ -22,23 +45,45 @@ function slugify(name: string): string {
     .slice(0, 40);
 }
 
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (window.Razorpay) { resolve(true); return; }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
+interface StoreDetails {
+  company_name: string;
+  slug: string;
+  owner_name: string;
+  email: string;
+  password: string;
+}
+
 export default function Signup() {
   const navigate = useNavigate();
-  const { setToken } = useAuth();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [form] = Form.useForm();
   const [selectedPlan, setSelectedPlan] = useState<PlanDef>(PLANS[0]);
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "ok" | "taken">("idle");
+  // antd's Field components deregister from the Form store when the <Form>
+  // itself unmounts (step 0 -> step 1), so form.getFieldsValue() at submit
+  // time would return nothing - capture the values while the Form is still
+  // mounted instead of relying on the form instance surviving the step change.
+  const [storeDetails, setStoreDetails] = useState<StoreDetails | null>(null);
+  const [paying, setPaying] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const registerMutation = useMutation({
     mutationFn: registerStore,
-    onSuccess: (res) => {
-      setToken(res.data.access_token);
-      setStep(2);
-    },
-    onError: (err: any) => {
-      const detail = err?.response?.data?.detail || "Registration failed";
-      message.error(detail);
+    onSuccess: () => setStep(2),
+    onError: (err: unknown) => {
+      message.error(extractErrorMessage(err, "Registration failed"));
     },
   });
 
@@ -77,22 +122,70 @@ export default function Signup() {
         const current = await checkSlug(slug);
         if (!current.data.available) { message.error("That store URL is already taken"); return; }
       }
+      setStoreDetails(form.getFieldsValue());
       setStep(1);
     } catch {
       // form validation errors shown inline
     }
   };
 
-  const submit = () => {
-    const values = form.getFieldsValue();
+  const submitRegistration = () => {
+    if (!storeDetails) return;
     registerMutation.mutate({
-      company_name: values.company_name,
-      slug: values.slug,
-      owner_name: values.owner_name,
-      email: values.email,
-      password: values.password,
+      company_name: storeDetails.company_name,
+      slug: storeDetails.slug,
+      owner_name: storeDetails.owner_name,
+      email: storeDetails.email,
+      password: storeDetails.password,
       plan: selectedPlan.key,
     });
+  };
+
+  const resend = async () => {
+    if (!storeDetails) return;
+    setResending(true);
+    try {
+      await resendVerification(storeDetails.email);
+      message.success("Verification email sent again - check your inbox");
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const payNow = async () => {
+    if (!storeDetails) return;
+    setPaying(true);
+    try {
+      const { data: order } = await createBillingOrder(storeDetails.slug);
+      const loaded = await loadRazorpayScript();
+      if (!loaded || !window.Razorpay) {
+        message.error("Couldn't load the payment widget - please try again");
+        return;
+      }
+      const rzp = new window.Razorpay({
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.order_id,
+        name: "Vastr",
+        description: `${selectedPlan.name} plan - activate now`,
+        prefill: { name: storeDetails.owner_name, email: storeDetails.email },
+        theme: { color: BRAND },
+        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+          try {
+            await verifyBillingPayment(response);
+            message.success("Payment successful — your subscription is active!");
+          } catch {
+            message.error("We couldn't verify that payment. Contact support if you were charged.");
+          }
+        },
+      });
+      rzp.open();
+    } catch (err) {
+      message.error(extractErrorMessage(err, "Online payments aren't available yet - your free trial is still active"));
+    } finally {
+      setPaying(false);
+    }
   };
 
   return (
@@ -131,18 +224,13 @@ export default function Signup() {
           }}
         />
         <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
-            <div
-              style={{
-                width: 44, height: 44, borderRadius: 13,
-                background: "rgba(255,255,255,0.18)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}
-            >
-              <ShopOutlined style={{ color: "#fff", fontSize: 22 }} />
-            </div>
+          <div
+            style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40, cursor: "pointer", width: "fit-content" }}
+            onClick={() => navigate(homeRouteFor(user?.role))}
+          >
+            <img src="/vastr.png" alt="Vastr" style={{ width: 44, height: 44, borderRadius: 13 }} />
             <div>
-              <div style={{ color: "#fff", fontWeight: 700, fontSize: 20 }}>Velora</div>
+              <div style={{ color: "#fff", fontWeight: 700, fontSize: 20 }}>Vastr</div>
               <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, letterSpacing: 1.5 }}>FASHION ERP</div>
             </div>
           </div>
@@ -155,7 +243,7 @@ export default function Signup() {
           </Typography.Paragraph>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 32 }}>
             {[
-              "Your own subdomain — yourstore.velora.app",
+              "Your own subdomain — yourstore.vastr.space",
               "Isolated data — no other store can see yours",
               "30-day free trial, no credit card needed",
               "Upgrade or cancel any time",
@@ -193,7 +281,7 @@ export default function Signup() {
                 Start your 30-day free trial — no credit card required.
               </Typography.Text>
 
-              <Form form={form} layout="vertical">
+              <Form form={form} layout="vertical" initialValues={storeDetails ?? undefined}>
                 <Form.Item
                   name="company_name"
                   label="Store name"
@@ -222,7 +310,7 @@ export default function Signup() {
                 >
                   <Input
                     size="large"
-                    prefix={<span style={{ color: "#9c8a92", fontSize: 12, marginRight: 2 }}>velora.app/</span>}
+                    prefix={<span style={{ color: "#9c8a92", fontSize: 12, marginRight: 2 }}>vastr.space/</span>}
                     placeholder="yourstore"
                     onChange={handleSlugChange}
                   />
@@ -281,7 +369,7 @@ export default function Signup() {
                 Choose your plan
               </Typography.Title>
               <Typography.Text type="secondary" style={{ display: "block", textAlign: "center", marginBottom: 24 }}>
-                All plans start with a 30-day free trial. You can upgrade any time.
+                Starter and Professional both start with a 30-day free trial, full features unlocked.
               </Typography.Text>
 
               <PricingCards
@@ -299,7 +387,7 @@ export default function Signup() {
                   size="large"
                   loading={registerMutation.isPending}
                   style={{ borderRadius: 10, minWidth: 200 }}
-                  onClick={submit}
+                  onClick={submitRegistration}
                 >
                   Start free trial with {selectedPlan.name}
                 </Button>
@@ -308,24 +396,52 @@ export default function Signup() {
           )}
 
           {step === 2 && (
-            <Card style={{ borderRadius: 20, border: "none", textAlign: "center" }} styles={{ body: { padding: "56px 36px" } }}>
-              <CheckCircleFilled style={{ fontSize: 64, color: "#16a34a", marginBottom: 20 }} />
+            <Card style={{ borderRadius: 20, border: "none", textAlign: "center" }} styles={{ body: { padding: "48px 36px" } }}>
+              <div
+                style={{
+                  width: 76, height: 76, borderRadius: "50%", margin: "0 auto 20px",
+                  background: `linear-gradient(135deg, ${BRAND_DARK}, ${BRAND})`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 8px 24px rgba(157,23,77,0.3)",
+                }}
+              >
+                <MailOutlined style={{ fontSize: 32, color: "#fff" }} />
+              </div>
               <Typography.Title level={3} style={{ marginBottom: 8 }}>
-                Your store is ready!
+                Check your inbox
               </Typography.Title>
-              <Typography.Text type="secondary" style={{ fontSize: 15, display: "block", marginBottom: 32 }}>
-                You're on the{" "}
-                <strong>{selectedPlan.name}</strong> plan with a{" "}
-                <strong>30-day free trial</strong>. No credit card needed.
+              <Typography.Text type="secondary" style={{ fontSize: 15, display: "block", marginBottom: 8, lineHeight: 1.6 }}>
+                We sent a verification link to <strong>{storeDetails?.email}</strong>. Click it to
+                activate <strong>{storeDetails?.company_name}</strong> and log in — your 30-day free
+                trial on the <strong>{selectedPlan.name}</strong> plan is already running.
+              </Typography.Text>
+              <Button type="link" loading={resending} onClick={resend} style={{ marginBottom: 8 }}>
+                Didn't get it? Resend the email
+              </Button>
+
+              <Divider style={{ margin: "20px 0" }} />
+
+              <Typography.Text strong style={{ display: "block", marginBottom: 4, fontSize: 14 }}>
+                Don't want to wait 30 days?
+              </Typography.Text>
+              <Typography.Text type="secondary" style={{ fontSize: 12.5, display: "block", marginBottom: 16 }}>
+                Activate billing right now — {selectedPlan.price} {selectedPlan.period} — and skip the trial.
+                Entirely optional; your trial keeps running either way.
               </Typography.Text>
               <Button
-                type="primary"
-                size="large"
-                style={{ borderRadius: 10, minWidth: 200 }}
-                onClick={() => navigate("/dashboard")}
+                icon={<LockOutlined />}
+                loading={paying}
+                onClick={payNow}
+                style={{ borderRadius: 10 }}
               >
-                Go to my dashboard
+                Pay {selectedPlan.price} now with Razorpay
               </Button>
+
+              <Typography.Text type="secondary" style={{ display: "block", marginTop: 24, fontSize: 13 }}>
+                <Link to="/login" style={{ color: BRAND }}>
+                  <RocketOutlined /> Already verified? Sign in
+                </Link>
+              </Typography.Text>
             </Card>
           )}
         </div>

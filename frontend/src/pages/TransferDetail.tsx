@@ -187,6 +187,7 @@ export default function TransferDetail() {
         rowKey="id"
         dataSource={transfer.items}
         pagination={false}
+        scroll={{ x: "max-content" }}
         columns={[
           { title: "SKU", dataIndex: "sku" },
           { title: "Item", dataIndex: "product_name" },

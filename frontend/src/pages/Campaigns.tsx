@@ -95,6 +95,7 @@ function RecipientsView({ campaign }: { campaign: CampaignDetail }) {
       size="small"
       dataSource={campaign.recipients}
       pagination={{ pageSize: 10 }}
+      scroll={{ x: "max-content" }}
       columns={[
         { title: "Customer", dataIndex: "customer_name" },
         { title: "Phone", dataIndex: "phone_number" },
@@ -536,7 +537,7 @@ export default function Campaigns() {
       </Card>
 
       <Typography.Title level={4}>Past Campaigns</Typography.Title>
-      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={campaigns} pagination={{ pageSize: 10 }} />
+      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={campaigns} pagination={{ pageSize: 10 }} scroll={{ x: "max-content" }} />
 
       <Modal
         title={viewingCampaign ? `${viewingCampaign.name} - ${viewingCampaign.recipient_count} recipients` : ""}

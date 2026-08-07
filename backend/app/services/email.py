@@ -144,8 +144,19 @@ def _send_via_smtp(p: EmailProvider, to_address: str, subject: str, body_text: s
     message["Subject"] = subject
     message.attach(MIMEText(body_text, "plain"))
 
-    with smtplib.SMTP(p.smtp_host, p.smtp_port, timeout=15) as server:
-        if p.smtp_use_tls:
-            server.starttls()
-        server.login(p.smtp_username, p.smtp_password)
-        server.sendmail(p.sender_email, [to_address], message.as_string())
+    # Port 465 is implicit TLS (SMTPS) - the connection must be encrypted
+    # from the very first byte. Port 587/25 use STARTTLS - plaintext first,
+    # then upgraded mid-handshake. Connecting to 465 with plain SMTP.starttls()
+    # (as this used to do unconditionally) hangs until timeout, since the
+    # server is waiting for a TLS ClientHello it never receives over what it
+    # thinks is a plaintext channel.
+    if p.smtp_port == 465:
+        with smtplib.SMTP_SSL(p.smtp_host, p.smtp_port, timeout=15) as server:
+            server.login(p.smtp_username, p.smtp_password)
+            server.sendmail(p.sender_email, [to_address], message.as_string())
+    else:
+        with smtplib.SMTP(p.smtp_host, p.smtp_port, timeout=15) as server:
+            if p.smtp_use_tls:
+                server.starttls()
+            server.login(p.smtp_username, p.smtp_password)
+            server.sendmail(p.sender_email, [to_address], message.as_string())

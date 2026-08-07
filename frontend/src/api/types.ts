@@ -637,12 +637,170 @@ export interface RegisterRequest {
   owner_name: string;
   email: string;
   password: string;
-  plan: "free" | "starter" | "professional" | "enterprise";
+  plan: "starter" | "professional" | "enterprise";
+}
+
+export interface RegisterResponse {
+  email: string;
+  message: string;
+}
+
+export interface ResendVerificationRequest {
+  email: string;
 }
 
 export interface SlugAvailability {
   slug: string;
   available: boolean;
+}
+
+// ---- Platform (Super Admin) settings ----
+export interface PlatformEmailConfig {
+  is_enabled: boolean;
+  smtp_host?: string | null;
+  smtp_port?: number | null;
+  smtp_username?: string | null;
+  smtp_password_set: boolean;
+  smtp_use_tls: boolean;
+  sender_name?: string | null;
+  sender_email?: string | null;
+  is_configured: boolean;
+  last_test_status?: string | null;
+  last_test_at?: string | null;
+  last_test_error?: string | null;
+}
+
+export interface PlatformEmailConfigUpdate {
+  is_enabled?: boolean;
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_username?: string;
+  smtp_password?: string;
+  smtp_use_tls?: boolean;
+  sender_name?: string;
+  sender_email?: string;
+}
+
+export interface PlatformPaymentConfig {
+  is_enabled: boolean;
+  is_live: boolean;
+  razorpay_key_id?: string | null;
+  razorpay_key_secret_set: boolean;
+  razorpay_webhook_secret_set: boolean;
+  is_configured: boolean;
+  last_test_status?: string | null;
+  last_test_at?: string | null;
+  last_test_error?: string | null;
+}
+
+export interface PlatformPaymentConfigUpdate {
+  is_enabled?: boolean;
+  is_live?: boolean;
+  razorpay_key_id?: string;
+  razorpay_key_secret?: string;
+  razorpay_webhook_secret?: string;
+}
+
+export interface PlatformWebsiteConfig {
+  site_name: string;
+  support_email?: string | null;
+  support_phone?: string | null;
+  footer_text?: string | null;
+  social_links: Record<string, string>;
+}
+
+export interface PlatformWebsiteConfigUpdate {
+  site_name?: string;
+  support_email?: string;
+  support_phone?: string;
+  footer_text?: string;
+  social_links?: Record<string, string>;
+}
+
+export interface PlatformDomainConfig {
+  base_domain: string;
+  reserved_slugs: string[];
+}
+
+export interface PlatformDomainConfigUpdate {
+  base_domain?: string;
+  reserved_slugs?: string[];
+}
+
+export interface PlatformTestResult {
+  ok: boolean;
+  detail: string;
+}
+
+// ---- Landing page CMS + legal pages ----
+export interface LandingFeature {
+  icon: string;
+  title: string;
+  body: string;
+}
+
+export interface LandingStep {
+  title: string;
+  body: string;
+}
+
+export interface LandingFaq {
+  q: string;
+  a: string;
+}
+
+export interface LandingContent {
+  hero_eyebrow?: string | null;
+  hero_title_line1?: string | null;
+  hero_title_highlight?: string | null;
+  hero_subtitle?: string | null;
+  hero_cta_primary?: string | null;
+  hero_cta_secondary?: string | null;
+  value_strip: string[];
+  features: LandingFeature[];
+  how_it_works: LandingStep[];
+  faqs: LandingFaq[];
+}
+
+export type LandingContentUpdate = Partial<LandingContent>;
+
+export interface LegalPage {
+  slug: string;
+  title: string;
+  content: string;
+  updated_at: string;
+}
+
+export interface LegalPageUpsert {
+  title: string;
+  content: string;
+}
+
+export interface Payment {
+  id: number;
+  tenant_id?: number | null;
+  tenant_name?: string | null;
+  plan: string;
+  amount: number;
+  currency: string;
+  status: string;
+  razorpay_order_id: string;
+  razorpay_payment_id?: string | null;
+  created_at: string;
+}
+
+// ---- Billing (Razorpay) ----
+export interface CreateOrderResponse {
+  order_id: string;
+  amount: number;
+  currency: string;
+  key_id: string;
+}
+
+export interface VerifyPaymentRequest {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
 }
 
 export type EmailProviderType = "brevo" | "resend" | "emailjs" | "smtp_generic" | "gmail_smtp" | "outlook_smtp";
@@ -906,6 +1064,37 @@ export interface AuditLogEntry {
   entity_id?: number | null;
   details?: Record<string, unknown> | null;
   created_at: string;
+}
+
+export interface GlobalAuditLogEntry extends AuditLogEntry {
+  tenant_name?: string | null;
+  user_name?: string | null;
+}
+
+export interface PlanCount {
+  plan: SubscriptionPlanName;
+  count: number;
+}
+
+export interface RecentSignup {
+  id: number;
+  company_name: string;
+  slug: string;
+  subscription_plan: SubscriptionPlanName;
+  created_at: string;
+}
+
+export interface PlatformOverview {
+  total_tenants: number;
+  active_tenants: number;
+  trialing_tenants: number;
+  paying_tenants: number;
+  suspended_tenants: number;
+  new_signups_7d: number;
+  new_signups_30d: number;
+  estimated_arr: number;
+  plan_breakdown: PlanCount[];
+  recent_signups: RecentSignup[];
 }
 
 // ---- Tenant self-service (the tenant's own users, not Super Admin) ----

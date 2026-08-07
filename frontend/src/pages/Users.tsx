@@ -84,7 +84,7 @@ export default function Users() {
         </Button>
       </Space>
 
-      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={users} />
+      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={users} scroll={{ x: "max-content" }} />
 
       <Modal
         title="New User"

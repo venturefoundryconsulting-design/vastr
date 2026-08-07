@@ -251,7 +251,7 @@ export default function Alterations() {
         <Typography.Title level={3} style={{ margin: 0 }}>
           <ScissorOutlined /> Tailor & Alterations
         </Typography.Title>
-        <Space>
+        <Space wrap>
           <Select
             allowClear
             placeholder="All outlets"
@@ -272,7 +272,7 @@ export default function Alterations() {
         </Space>
       </Space>
 
-      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={alterations} pagination={{ pageSize: 15 }} />
+      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={alterations} pagination={{ pageSize: 15 }} scroll={{ x: "max-content" }} />
 
       {modalOpen && <NewAlterationModal onClose={() => setModalOpen(false)} />}
     </div>

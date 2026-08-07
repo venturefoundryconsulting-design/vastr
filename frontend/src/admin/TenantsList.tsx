@@ -90,7 +90,7 @@ export default function TenantsList() {
         allowClear
       />
 
-      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={tenants} />
+      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={tenants} scroll={{ x: "max-content" }} />
 
       <Modal
         title="New Tenant"

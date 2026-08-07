@@ -207,6 +207,7 @@ export default function Sales() {
               rowKey="id"
               pagination={false}
               dataSource={sale.items}
+              scroll={{ x: "max-content" }}
               columns={[
                 { title: "SKU", dataIndex: "sku" },
                 { title: "Product", dataIndex: "product_name" },

@@ -2,24 +2,16 @@ import {
   AppstoreOutlined,
   BarChartOutlined,
   ContactsOutlined,
-  CrownOutlined,
-  ShopOutlined,
   ShoppingCartOutlined,
-  UserOutlined,
 } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Col, Divider, Form, Input, Row, Typography, message } from "antd";
+import { Alert, Button, Card, Col, Form, Input, Row, Typography, message } from "antd";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { getPublicBranding } from "../api/endpoints";
+import { getPublicBranding, resendVerification } from "../api/endpoints";
 import { useAuth } from "../context/AuthContext";
 import { BRAND, BRAND_DARK } from "../theme";
-
-const DEMO_ACCOUNTS = {
-  superadmin: { email: "superadmin@velora.dev", password: "velora2024!" },
-  admin: { email: "admin@tanisi.demo.com", password: "admin123" },
-  staff: { email: "staff@tanisi.demo.com", password: "staff123" },
-};
+import { homeRouteFor } from "../utils/roles";
 
 function detectStoreSlug(searchParams: URLSearchParams): string | undefined {
   const fromParam = searchParams.get("store");
@@ -58,58 +50,65 @@ function LogoMark({ size = 52, logoUrl }: { size?: number; logoUrl?: string | nu
     );
   }
   return (
-    <div
+    <img
+      src="/vastr.png"
+      alt="Vastr"
       style={{
         width: size,
         height: size,
         minWidth: size,
         borderRadius: size * 0.27,
-        background: `linear-gradient(135deg, ${BRAND}, #c2185b)`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        objectFit: "contain",
         boxShadow: "0 6px 18px rgba(157, 23, 77, 0.35)",
       }}
-    >
-      <ShopOutlined style={{ color: "#fff", fontSize: size * 0.5 }} />
-    </div>
+    />
   );
 }
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [quickRole, setQuickRole] = useState<"superadmin" | "admin" | "staff" | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
   const storeSlug = detectStoreSlug(searchParams);
   const { data: branding } = useQuery({
     queryKey: ["public-branding", storeSlug],
     queryFn: () => getPublicBranding(storeSlug).then((r) => r.data),
   });
-  const brandName = branding?.business_name || "Velora";
+  const brandName = branding?.business_name || "Vastr";
 
   const doLogin = async (email: string, password: string) => {
     setLoading(true);
+    setUnverifiedEmail(null);
     try {
       const user = await login(email, password);
       // Super Admins aren't a member of any tenant (see backend User.tenant_id)
       // - the tenant dashboard would just show them empty data.
-      navigate((user.role as string) === "super_admin" ? "/platform-admin/tenants" : "/dashboard");
-    } catch {
-      message.error("Invalid email or password");
+      navigate((user.role as string) === "super_admin" ? "/platform-admin/overview" : "/dashboard");
+    } catch (err: any) {
+      const detail: string | undefined = err?.response?.data?.detail;
+      if (detail?.toLowerCase().includes("verify your email")) {
+        setUnverifiedEmail(email);
+      } else {
+        message.error("Invalid email or password");
+      }
     } finally {
       setLoading(false);
-      setQuickRole(null);
     }
   };
 
-  const quickLogin = (role: "superadmin" | "admin" | "staff") => {
-    const creds = DEMO_ACCOUNTS[role];
-    form.setFieldsValue(creds);
-    setQuickRole(role);
-    doLogin(creds.email, creds.password);
+  const resend = async () => {
+    if (!unverifiedEmail) return;
+    setResending(true);
+    try {
+      await resendVerification(unverifiedEmail);
+      message.success("Verification email sent — check your inbox");
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -165,7 +164,11 @@ export default function Login() {
         />
 
         <div style={{ position: "relative", zIndex: 1 }}>
-          <div className="login-animate login-animate-1" style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 40 }}>
+          <div
+            className="login-animate login-animate-1"
+            style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 40, cursor: "pointer", width: "fit-content" }}
+            onClick={() => navigate(homeRouteFor(user?.role))}
+          >
             <LogoMark logoUrl={branding?.logo_url} />
             <div>
               <div style={{ color: "#fff", fontWeight: 700, fontSize: 22, letterSpacing: 0.2 }}>{brandName}</div>
@@ -246,49 +249,27 @@ export default function Login() {
             Sign in to continue to {brandName} ERP
           </Typography.Text>
 
-          <Typography.Text type="secondary" style={{ display: "block", marginBottom: 10, fontSize: 11, textAlign: "center", letterSpacing: 0.5 }}>
-            DEMO LOGINS
-          </Typography.Text>
-          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <Button
-              block
-              size="small"
-              icon={<CrownOutlined />}
-              style={{ fontSize: 12 }}
-              loading={loading && quickRole === "superadmin"}
-              disabled={loading && quickRole !== "superadmin"}
-              onClick={() => quickLogin("superadmin")}
-            >
-              Super Admin
-            </Button>
-            <Button
-              block
-              size="small"
-              icon={<CrownOutlined />}
-              style={{ fontSize: 12 }}
-              loading={loading && quickRole === "admin"}
-              disabled={loading && quickRole !== "admin"}
-              onClick={() => quickLogin("admin")}
-            >
-              Store Admin
-            </Button>
-            <Button
-              block
-              size="small"
-              icon={<UserOutlined />}
-              style={{ fontSize: 12 }}
-              loading={loading && quickRole === "staff"}
-              disabled={loading && quickRole !== "staff"}
-              onClick={() => quickLogin("staff")}
-            >
-              Staff
-            </Button>
-          </div>
-          <Divider style={{ margin: "16px 0 24px", fontSize: 12, color: "#9a8b93" }}>or sign in manually</Divider>
+          {unverifiedEmail && (
+            <Alert
+              type="warning"
+              showIcon
+              style={{ marginBottom: 20, borderRadius: 10 }}
+              message="Verify your email to sign in"
+              description={
+                <>
+                  We sent a link to <strong>{unverifiedEmail}</strong> when you signed up. Click it to
+                  activate your account, or{" "}
+                  <Button type="link" size="small" loading={resending} onClick={resend} style={{ padding: 0, height: "auto" }}>
+                    resend the email
+                  </Button>.
+                </>
+              }
+            />
+          )}
 
           <Form form={form} layout="vertical" onFinish={(values) => doLogin(values.email, values.password)}>
             <Form.Item name="email" label="Email" rules={[{ required: true, type: "email" }]}>
-              <Input placeholder="you@tanisi.demo.com" autoFocus />
+              <Input placeholder="you@example.com" autoFocus />
             </Form.Item>
             <Form.Item name="password" label="Password" rules={[{ required: true }]}>
               <Input.Password placeholder="••••••••" />
@@ -298,23 +279,17 @@ export default function Login() {
                 type="primary"
                 htmlType="submit"
                 block
-                loading={loading && !quickRole}
-                disabled={loading && !!quickRole}
+                loading={loading}
                 size="large"
               >
                 Sign in
               </Button>
             </Form.Item>
           </Form>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              New store?{" "}
-              <Link to="/signup" style={{ color: BRAND, fontWeight: 600 }}>Sign up free</Link>
-            </Typography.Text>
-            <Typography.Text type="secondary" style={{ fontSize: 11 }}>
-              superadmin@velora.dev / velora2024!
-            </Typography.Text>
-          </div>
+          <Typography.Text type="secondary" style={{ display: "block", textAlign: "center", fontSize: 12 }}>
+            New store?{" "}
+            <Link to="/signup" style={{ color: BRAND, fontWeight: 600 }}>Sign up free</Link>
+          </Typography.Text>
         </Card>
       </Col>
     </Row>

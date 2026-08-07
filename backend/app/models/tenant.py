@@ -22,7 +22,7 @@ class SubscriptionPlanName(str, enum.Enum):
 
 
 class Tenant(Base, TimestampMixin):
-    """A single company/customer on the Velora platform. Every tenant-owned row
+    """A single company/customer on the Vastr platform. Every tenant-owned row
     across the schema carries a tenant_id pointing here (see TenantMixin)."""
 
     __tablename__ = "tenants"

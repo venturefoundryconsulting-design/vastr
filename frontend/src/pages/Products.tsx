@@ -232,6 +232,7 @@ function PrintLabelsModal({ product, onClose }: { product: Product; onClose: () 
         rowKey="id"
         pagination={false}
         dataSource={product.variants}
+        scroll={{ x: "max-content" }}
         columns={[
           {
             title: "Variant",
@@ -479,11 +480,11 @@ export default function Products() {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }}>
+      <Space wrap style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }}>
         <Typography.Title level={3} style={{ margin: 0 }}>
           Products
         </Typography.Title>
-        <Space>
+        <Space wrap>
           <Input.Search
             placeholder="Search products..."
             allowClear
@@ -517,6 +518,7 @@ export default function Products() {
         columns={columns}
         dataSource={products}
         pagination={{ pageSize: 15 }}
+        scroll={{ x: "max-content" }}
       />
 
       <Modal

@@ -188,7 +188,7 @@ export default function Discounts() {
         </Button>
       </Space>
 
-      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={rules} pagination={{ pageSize: 15 }} />
+      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={rules} pagination={{ pageSize: 15 }} scroll={{ x: "max-content" }} />
 
       <Modal
         title={editing ? `Edit Discount - ${editing.name}` : "New Discount"}

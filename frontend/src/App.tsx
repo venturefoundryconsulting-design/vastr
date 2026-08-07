@@ -12,7 +12,9 @@ import Discounts from "./pages/Discounts";
 import HRM from "./pages/HRM";
 import Inventory from "./pages/Inventory";
 import Landing from "./saas/Landing";
+import LegalPage from "./saas/LegalPage";
 import Signup from "./saas/Signup";
+import VerifyEmail from "./saas/VerifyEmail";
 import Login from "./pages/Login";
 import Outlets from "./pages/Outlets";
 import Payroll from "./pages/Payroll";
@@ -30,6 +32,12 @@ import Users from "./pages/Users";
 import Vendors from "./pages/Vendors";
 import RequireSuperAdmin from "./admin/RequireSuperAdmin";
 import SuperAdminLayout from "./admin/SuperAdminLayout";
+import Activity from "./admin/Activity";
+import GlobalSettings from "./admin/GlobalSettings";
+import LandingPageSettings from "./admin/LandingPageSettings";
+import Overview from "./admin/Overview";
+import SubdomainSettings from "./admin/SubdomainSettings";
+import Subscriptions from "./admin/Subscriptions";
 import TenantDetail from "./admin/TenantDetail";
 import TenantsList from "./admin/TenantsList";
 
@@ -64,8 +72,15 @@ export default function App() {
       <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/terms" element={<LegalPage slug="terms" fallbackTitle="Terms of Service" />} />
+      <Route path="/privacy" element={<LegalPage slug="privacy" fallbackTitle="Privacy Policy" />} />
       <Route path="/" element={<Root />} />
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+      <Route
+        path="/platform-admin/overview"
+        element={<PlatformAdmin><Overview /></PlatformAdmin>}
+      />
       <Route
         path="/platform-admin/tenants"
         element={<PlatformAdmin><TenantsList /></PlatformAdmin>}
@@ -73,6 +88,26 @@ export default function App() {
       <Route
         path="/platform-admin/tenants/:id"
         element={<PlatformAdmin><TenantDetail /></PlatformAdmin>}
+      />
+      <Route
+        path="/platform-admin/activity"
+        element={<PlatformAdmin><Activity /></PlatformAdmin>}
+      />
+      <Route
+        path="/platform-admin/subscriptions"
+        element={<PlatformAdmin><Subscriptions /></PlatformAdmin>}
+      />
+      <Route
+        path="/platform-admin/domain"
+        element={<PlatformAdmin><SubdomainSettings /></PlatformAdmin>}
+      />
+      <Route
+        path="/platform-admin/landing"
+        element={<PlatformAdmin><LandingPageSettings /></PlatformAdmin>}
+      />
+      <Route
+        path="/platform-admin/settings"
+        element={<PlatformAdmin><GlobalSettings /></PlatformAdmin>}
       />
       <Route path="/pos" element={<Protected><POS /></Protected>} />
       <Route path="/sales" element={<Protected><Sales /></Protected>} />

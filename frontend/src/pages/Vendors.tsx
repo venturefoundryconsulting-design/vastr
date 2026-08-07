@@ -197,6 +197,7 @@ export default function Vendors() {
         columns={columns}
         dataSource={vendors}
         expandable={{ expandedRowRender: (vendor) => <VendorProducts vendor={vendor} /> }}
+        scroll={{ x: "max-content" }}
       />
 
       <Modal

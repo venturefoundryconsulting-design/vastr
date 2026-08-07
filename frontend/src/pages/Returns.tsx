@@ -57,6 +57,7 @@ function ReturnDetail({ ret }: { ret: Return }) {
             pagination={false}
             dataSource={ret.return_items}
             style={{ marginBottom: 12, marginTop: 6 }}
+            scroll={{ x: "max-content" }}
             columns={[
               { title: "SKU", dataIndex: "sku" },
               { title: "Product", dataIndex: "product_name" },
@@ -75,6 +76,7 @@ function ReturnDetail({ ret }: { ret: Return }) {
             pagination={false}
             dataSource={ret.exchange_items}
             style={{ marginTop: 6 }}
+            scroll={{ x: "max-content" }}
             columns={[
               { title: "SKU", dataIndex: "sku" },
               { title: "Product", dataIndex: "product_name" },

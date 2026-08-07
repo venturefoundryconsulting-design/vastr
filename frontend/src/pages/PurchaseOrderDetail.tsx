@@ -96,6 +96,7 @@ export default function PurchaseOrderDetail() {
         rowKey="id"
         dataSource={po.items}
         pagination={false}
+        scroll={{ x: "max-content" }}
         columns={[
           { title: "SKU", dataIndex: "sku" },
           { title: "Item", dataIndex: "product_name" },

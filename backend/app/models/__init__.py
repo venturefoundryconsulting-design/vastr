@@ -22,6 +22,15 @@ from app.models.integrations import EmailProvider, EmailProviderType, SmsProvide
 from app.models.inventory import StockLevel, StockMovement
 from app.models.outlet import Outlet, PaperSize
 from app.models.payroll import Payslip, PayslipStatus, StaffSalary
+from app.models.platform_settings import (
+    LandingContent,
+    LegalPage,
+    Payment,
+    PlatformDomainConfig,
+    PlatformEmailConfig,
+    PlatformPaymentConfig,
+    PlatformWebsiteConfig,
+)
 from app.models.product import Category, ImageAngle, Product, ProductImage, ProductVariant
 from app.models.purchase import PurchaseOrder, PurchaseOrderItem
 from app.models.returns import ExchangeItem, RefundMode, Return, ReturnItem
@@ -66,11 +75,18 @@ __all__ = [
     "LeaveStatus",
     "LeaveType",
     "MessageTemplate",
+    "LandingContent",
+    "LegalPage",
     "Outlet",
     "PaperSize",
+    "Payment",
     "Payslip",
     "PayslipStatus",
     "Permission",
+    "PlatformDomainConfig",
+    "PlatformEmailConfig",
+    "PlatformPaymentConfig",
+    "PlatformWebsiteConfig",
     "Product",
     "ProductImage",
     "ProductVariant",

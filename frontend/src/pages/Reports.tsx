@@ -87,6 +87,7 @@ function StockAgingTab({ outletId }: { outletId?: number }) {
         loading={isLoading}
         dataSource={data}
         pagination={{ pageSize: 20 }}
+        scroll={{ x: "max-content" }}
         columns={[
           ...variantColumns(),
           {
@@ -144,6 +145,7 @@ function DeadStockTab({ outletId }: { outletId?: number }) {
         dataSource={data}
         pagination={{ pageSize: 20 }}
         locale={{ emptyText: `No dead stock — everything has sold within the last ${days} days` }}
+        scroll={{ x: "max-content" }}
         columns={[
           ...variantColumns(),
           {

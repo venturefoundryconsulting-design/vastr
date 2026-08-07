@@ -25,3 +25,12 @@ export function hasMinRole(role: UserRole | undefined, minRole: UserRole | undef
   if (!role) return false;
   return ROLE_RANK[role] >= ROLE_RANK[minRole];
 }
+
+// super_admin is intentionally outside the UserRole type (see api/types.ts) -
+// checked as a raw string here since it never appears in the tenant rank
+// ladder above. Used anywhere a logo/brand click needs to land on "the
+// user's own home" (Landing, Login, Signup) rather than a hardcoded route.
+export function homeRouteFor(role: string | undefined): string {
+  if (!role) return "/";
+  return role === "super_admin" ? "/platform-admin/overview" : "/dashboard";
+}

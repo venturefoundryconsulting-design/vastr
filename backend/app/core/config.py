@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     WHATSAPP_WEBHOOK_VERIFY_TOKEN: str = "tanisi-whatsapp-webhook"
 
     PUBLIC_BASE_URL: str = "http://localhost:8000"
+    # Where the React app lives - email verification links point here
+    # (backend serves the API only, not the SPA in local dev).
+    FRONTEND_BASE_URL: str = "http://localhost:5173"
 
     UPLOAD_DIR: Path = Path(__file__).resolve().parents[2] / "uploads"
 

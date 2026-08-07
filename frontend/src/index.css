@@ -12,6 +12,19 @@ body {
   background: #f7f5f8;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* The sider's own inline `style` targets the <aside> root, but antd wraps our
+   actual header/nav/footer children in its own .ant-layout-sider-children div -
+   without this it stays a plain block box (no flex context, no bounded height),
+   so the nav item list can't get its own scroll region and just gets clipped by
+   the fixed-position, 100vh-tall sider on mobile with no way to reach it. */
+.ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
 ::selection {

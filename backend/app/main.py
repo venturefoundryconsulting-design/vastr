@@ -13,6 +13,7 @@ from app.routers import (
     admin,
     alterations,
     auth,
+    billing,
     campaigns,
     customers,
     dashboard,
@@ -21,8 +22,10 @@ from app.routers import (
     hrm,
     integrations,
     inventory,
+    landing,
     outlets,
     payroll,
+    platform_settings,
     products,
     purchase_orders,
     reports,
@@ -84,6 +87,10 @@ app.include_router(hardware.router)
 app.include_router(hrm.router)
 app.include_router(payroll.router)
 app.include_router(tenant_router.router)
+app.include_router(billing.router)
+app.include_router(platform_settings.router)
+app.include_router(landing.router)
+app.include_router(landing.public_router)
 
 settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")

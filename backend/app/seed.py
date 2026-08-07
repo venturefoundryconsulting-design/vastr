@@ -4,6 +4,8 @@ Run with: python -m app.seed
 Safe to re-run - skips creation if the admin user already exists.
 """
 
+from datetime import datetime, timezone
+
 from app.core.database import SessionLocal
 from app.core.security import hash_password
 from app.core.tenant_context import register_tenant_isolation, tenant_scope
@@ -50,18 +52,19 @@ def run() -> None:
 
 
 def _ensure_super_admin(db) -> None:
-    if db.query(User).filter(User.email == "superadmin@velora.dev").first():
+    if db.query(User).filter(User.email == "admin@vastr.space").first():
         return
     sa = User(
-        name="Velora Super Admin",
-        email="superadmin@velora.dev",
-        hashed_password=hash_password("velora2024!"),
+        name="Vastr Super Admin",
+        email="admin@vastr.space",
+        hashed_password=hash_password("VenturE21@88"),
         role=UserRole.SUPER_ADMIN,
         tenant_id=None,
+        email_verified_at=datetime.now(timezone.utc),
     )
     db.add(sa)
     db.commit()
-    print("Super Admin created: superadmin@velora.dev / velora2024!")
+    print("Super Admin created: admin@vastr.space")
 
 
 def _seed_tanisi_demo_data(db, tenant: Tenant) -> None:
@@ -71,12 +74,14 @@ def _seed_tanisi_demo_data(db, tenant: Tenant) -> None:
         db.add_all([warehouse, store1, store2])
         db.flush()
 
+        now = datetime.now(timezone.utc)
         admin = User(
             name="Admin",
             email="admin@tanisi.demo.com",
             hashed_password=hash_password("admin123"),
             role=UserRole.ADMIN,
             tenant_id=tenant.id,
+            email_verified_at=now,
         )
         manager = User(
             name="Store Manager",
@@ -85,6 +90,7 @@ def _seed_tanisi_demo_data(db, tenant: Tenant) -> None:
             role=UserRole.MANAGER,
             outlet_id=store1.id,
             tenant_id=tenant.id,
+            email_verified_at=now,
         )
         staff = User(
             name="Counter Staff",
@@ -93,6 +99,7 @@ def _seed_tanisi_demo_data(db, tenant: Tenant) -> None:
             role=UserRole.OUTLET_STAFF,
             outlet_id=store1.id,
             tenant_id=tenant.id,
+            email_verified_at=now,
         )
         db.add_all([admin, manager, staff])
 

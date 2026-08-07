@@ -636,6 +636,7 @@ export default function POS() {
               dataSource={receipt.items}
               pagination={false}
               size="small"
+              scroll={{ x: "max-content" }}
               columns={[
                 { title: "Item", dataIndex: "product_name" },
                 { title: "Qty", dataIndex: "quantity" },

@@ -1,6 +1,7 @@
 import enum
+from datetime import datetime
 
-from sqlalchemy import Boolean, Enum, ForeignKey, String
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -37,5 +38,13 @@ class User(Base, TimestampMixin):
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.OUTLET_STAFF)
     outlet_id: Mapped[int | None] = mapped_column(ForeignKey("outlets.id"), default=None)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Self-service signups (POST /api/auth/register) must verify their email
+    # before they can log in - accounts created by a Super Admin or the seed
+    # script are stamped verified immediately (see their respective call sites),
+    # since those are already trusted/administrative creations, not open signup.
+    email_verified_at: Mapped["datetime | None"] = mapped_column(DateTime(timezone=True), default=None)
+    verification_token: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, default=None)
+    verification_sent_at: Mapped["datetime | None"] = mapped_column(DateTime(timezone=True), default=None)
 
     outlet: Mapped["Outlet | None"] = relationship(back_populates="users")  # noqa: F821

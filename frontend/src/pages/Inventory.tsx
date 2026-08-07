@@ -73,7 +73,7 @@ export default function Inventory() {
         </Space>
       </Space>
 
-      <Table rowKey="id" sticky loading={isLoading} columns={columns} dataSource={stock} pagination={{ pageSize: 20 }} />
+      <Table rowKey="id" sticky loading={isLoading} columns={columns} dataSource={stock} pagination={{ pageSize: 20 }} scroll={{ x: "max-content" }} />
 
       <Modal
         title={`Adjust stock - ${adjustTarget?.sku ?? ""}`}

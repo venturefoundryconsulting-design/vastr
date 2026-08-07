@@ -206,6 +206,7 @@ export default function TenantDetail() {
               <Table
                 rowKey="id"
                 dataSource={users}
+                scroll={{ x: "max-content" }}
                 columns={[
                   { title: "Name", dataIndex: "name" },
                   { title: "Email", dataIndex: "email" },
@@ -230,6 +231,7 @@ export default function TenantDetail() {
               <Table
                 rowKey="id"
                 dataSource={activity}
+                scroll={{ x: "max-content" }}
                 columns={[
                   { title: "When", dataIndex: "created_at", render: (v: string) => new Date(v).toLocaleString() },
                   { title: "Action", dataIndex: "action" },

@@ -122,6 +122,7 @@ function MyAttendanceTab() {
         loading={isLoading}
         dataSource={records}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: "max-content" }}
         columns={[
           { title: "Date", dataIndex: "date" },
           { title: "Check-in", key: "in", render: (_: unknown, r: Attendance) => fmtTime(r.check_in_at) },
@@ -159,6 +160,7 @@ function TeamAttendanceTab() {
         loading={isLoading}
         dataSource={records}
         pagination={{ pageSize: 15 }}
+        scroll={{ x: "max-content" }}
         columns={[
           { title: "Staff", dataIndex: "staff_name" },
           { title: "Outlet", dataIndex: "outlet_name" },
@@ -210,6 +212,7 @@ function MyLeaveRequestsTab() {
         loading={isLoading}
         dataSource={requests}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: "max-content" }}
         columns={[
           { title: "Type", dataIndex: "leave_type", render: (v: LeaveType) => LEAVE_TYPE_LABELS[v] },
           { title: "From", dataIndex: "start_date" },
@@ -302,6 +305,7 @@ function LeaveApprovalsTab() {
         loading={isLoading}
         dataSource={requests}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: "max-content" }}
         columns={[
           { title: "Staff", dataIndex: "staff_name" },
           { title: "Type", dataIndex: "leave_type", render: (v: LeaveType) => LEAVE_TYPE_LABELS[v] },

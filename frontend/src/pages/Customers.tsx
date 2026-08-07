@@ -96,6 +96,7 @@ function AddressesTab({ customer }: { customer: Customer }) {
         dataSource={addresses}
         pagination={false}
         style={{ marginBottom: 12 }}
+        scroll={{ x: "max-content" }}
       />
       <Form
         layout="inline"
@@ -166,6 +167,7 @@ function PurchaseHistoryTab({ customer }: { customer: Customer }) {
       dataSource={purchases}
       pagination={false}
       locale={{ emptyText: "No purchases yet" }}
+      scroll={{ x: "max-content" }}
     />
   );
 }
@@ -247,6 +249,7 @@ function BalanceTab({ customer }: { customer: Customer }) {
         dataSource={adjustments}
         pagination={false}
         locale={{ emptyText: "No balance adjustments yet" }}
+        scroll={{ x: "max-content" }}
       />
     </div>
   );
@@ -331,6 +334,7 @@ function LoyaltyTab({ customer }: { customer: Customer }) {
         dataSource={adjustments}
         pagination={false}
         locale={{ emptyText: "No loyalty adjustments yet" }}
+        scroll={{ x: "max-content" }}
       />
     </div>
   );
@@ -489,6 +493,7 @@ export default function Customers() {
         columns={columns}
         dataSource={customers}
         expandable={{ expandedRowRender: (customer) => <CustomerDetail customer={customer} /> }}
+        scroll={{ x: "max-content" }}
       />
 
       <Modal

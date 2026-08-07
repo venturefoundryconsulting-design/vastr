@@ -97,7 +97,7 @@ export default function Outlets() {
         </Button>
       </Space>
 
-      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={outlets} />
+      <Table rowKey="id" loading={isLoading} columns={columns} dataSource={outlets} scroll={{ x: "max-content" }} />
 
       <Modal
         title={editingOutlet ? "Edit Outlet" : "New Outlet"}
