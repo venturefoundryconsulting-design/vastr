@@ -135,7 +135,7 @@ def sales_trend(
     start = end - timedelta(days=days - 1)
     sales = _sales_in_range(db, start, outlet_id)
 
-    buckets = {start + timedelta(days=i): {"total": 0.0, "count": 0} for i in range(days)}
+    buckets = {start + timedelta(days=i): {"total": to_decimal(0), "count": 0} for i in range(days)}
     for sale in sales:
         day = sale.created_at.date()
         bucket = buckets.get(day)
@@ -144,7 +144,7 @@ def sales_trend(
             bucket["count"] += 1
 
     return [
-        SalesTrendPoint(date=d.isoformat(), total=round(v["total"], 2), count=v["count"])
+        SalesTrendPoint(date=d.isoformat(), total=money(v["total"]), count=v["count"])
         for d, v in sorted(buckets.items())
     ]
 
@@ -159,11 +159,11 @@ def payment_mode_breakdown(
     breakdown: dict[str, dict] = {}
     for sale in sales:
         key = sale.payment_mode.value
-        entry = breakdown.setdefault(key, {"total": 0.0, "count": 0})
+        entry = breakdown.setdefault(key, {"total": to_decimal(0), "count": 0})
         entry["total"] += sale.total
         entry["count"] += 1
 
     return [
-        PaymentModeBreakdownItem(payment_mode=k, total=round(v["total"], 2), count=v["count"])
+        PaymentModeBreakdownItem(payment_mode=k, total=money(v["total"]), count=v["count"])
         for k, v in sorted(breakdown.items())
     ]
