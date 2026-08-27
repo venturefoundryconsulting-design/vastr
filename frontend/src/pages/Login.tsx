@@ -31,6 +31,22 @@ const FEATURES = [
   { icon: <BarChartOutlined />, label: "Live sales trends & business reports" },
 ];
 
+// Two separate account sets, not one shared set with an env override: the
+// local seed accounts (see backend/app/seed.py) only exist in local dev's
+// database, and the Deepa tenant accounts only exist on vastr.space - each
+// only ever makes sense in the environment it was created in.
+const DEMO_ACCOUNTS = import.meta.env.DEV
+  ? [
+      { label: "Admin", email: "admin@tanisi.demo.com", password: "admin123" },
+      { label: "Manager", email: "manager@tanisi.demo.com", password: "manager123" },
+      { label: "Staff", email: "staff@tanisi.demo.com", password: "staff123" },
+    ]
+  : [
+      { label: "Admin", email: "aeroxonemedia+deepa@gmail.com", password: "DeepaDemo@2026" },
+      { label: "Manager", email: "deepa.manager.demo@vastr.space", password: "DeepaDemo@2026" },
+      { label: "Staff", email: "deepa.staff.demo@vastr.space", password: "DeepaDemo@2026" },
+    ];
+
 function LogoMark({ size = 52, logoUrl }: { size?: number; logoUrl?: string | null }) {
   if (logoUrl) {
     return (
@@ -310,15 +326,11 @@ export default function Login() {
                 QUICK LOGIN — FOR TESTING
               </Typography.Text>
               <div style={{ display: "flex", gap: 8 }}>
-                <Button size="small" block onClick={() => demoLogin("admin@tanisi.demo.com", "admin123")}>
-                  Admin
-                </Button>
-                <Button size="small" block onClick={() => demoLogin("manager@tanisi.demo.com", "manager123")}>
-                  Manager
-                </Button>
-                <Button size="small" block onClick={() => demoLogin("staff@tanisi.demo.com", "staff123")}>
-                  Staff
-                </Button>
+                {DEMO_ACCOUNTS.map((acct) => (
+                  <Button key={acct.label} size="small" block onClick={() => demoLogin(acct.email, acct.password)}>
+                    {acct.label}
+                  </Button>
+                ))}
               </div>
             </div>
           )}
