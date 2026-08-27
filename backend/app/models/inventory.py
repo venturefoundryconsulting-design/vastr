@@ -1,7 +1,7 @@
 import enum
 from decimal import Decimal
 
-from sqlalchemy import Enum, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import Enum, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -66,6 +66,14 @@ class StockMovement(Base, TimestampMixin, TenantMixin):
     """Immutable audit trail of every stock quantity change."""
 
     __tablename__ = "stock_movements"
+    __table_args__ = (
+        # Every ledger reconciliation, availability check and movements list
+        # groups or filters on exactly this triple - see RECONCILE_SQL in
+        # tests/test_ledger_integrity.py and list_movements() in
+        # routers/inventory.py. Never indexed before Phase 10; at 100k+ rows
+        # each of those was a sequential scan.
+        Index("ix_stock_movements_tenant_variant_outlet", "tenant_id", "variant_id", "outlet_id"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     variant_id: Mapped[int] = mapped_column(ForeignKey("items.id"))

@@ -76,11 +76,20 @@ def _update_average_cost(
 
     Read *before* the receipt's own movement is applied, so the incoming quantity
     is not counted on both sides of the average.
+
+    Callers must call this only after locking the receiving outlet's stock_levels
+    row (post_receipt does, via get_or_create_stock_level). That lock is what
+    serializes two concurrent receipts for the same item - but only protects
+    `item.cost_price` if this function re-reads it under the lock rather than
+    trusting the caller's copy, which may have been loaded *before* the lock was
+    acquired and would then still show the pre-lock value even after a
+    concurrent receipt has committed a new one in the meantime.
     """
     if received_in_stock_uom <= 0 or unit_cost_stock_uom <= 0:
         return
     from app.models.inventory import StockLevel
 
+    db.refresh(item, attribute_names=["cost_price"])
     on_hand = to_decimal(
         db.query(func.coalesce(func.sum(StockLevel.quantity), 0))
         .filter(StockLevel.variant_id == item.id)

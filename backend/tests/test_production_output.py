@@ -202,3 +202,118 @@ def test_close_short_after_partial_output(db, run):
     assert order.produced_quantity + order.cancelled_quantity == order.planned_quantity
     assert stock_of(db, garment.id, wh.id) == Decimal("6.0000")
     assert_ledger_reconciles(db)
+
+
+# ------------------------------------------------------------ concurrency
+#
+# Phase 10 hardening. record_output() checks produced + cancelled + qty <=
+# planned by re-reading the order after taking the finished-item's
+# stock_levels row lock - the same trick reservations use in
+# test_material_flow.py. This proves it holds on real threads: an order
+# planning 10, with two outputs of 6 racing, must not let both through (that
+# would produce 12 against a plan of 10).
+
+import threading
+
+from sqlalchemy.orm import sessionmaker
+
+from app.core.tenant_context import tenant_scope
+from app.models.inventory import StockLevel
+from app.models.outlet import Outlet
+from app.models.product import Item
+from app.models.production import ProductionOrder
+from app.models.tenant import Tenant
+from app.models.uom import UnitOfMeasure, UomCategory
+
+_PO_TENANT_SEQ = iter(range(9800, 9900))
+
+
+def test_concurrent_output_cannot_overproduce(_database):
+    tenant_id = next(_PO_TENANT_SEQ)
+    Session = sessionmaker(bind=_database)
+    s = Session()
+    s.execute(sa.text("SET LOCAL lock_timeout = '10s'"))
+    with tenant_scope(tenant_id):
+        s.add(Tenant(id=tenant_id, company_name="PO Co", slug=f"po-co-{tenant_id}"))
+        s.flush()
+        outlet = Outlet(name="PO Store", code="POS")
+        s.add(outlet)
+        category = UomCategory(code="COUNT", name="Count")
+        s.add(category)
+        s.flush()
+        piece = UnitOfMeasure(code="PC", name="Piece", category_id=category.id,
+                              factor_to_base=Decimal("1"), is_base=True)
+        s.add(piece)
+        s.flush()
+        garment = Item(sku=f"PO-RACE-{tenant_id}", name="PO Race Garment",
+                       item_type=ItemType.FINISHED_PRODUCT, stock_uom_id=piece.id)
+        s.add(garment)
+        s.flush()
+        order = ProductionOrder(
+            po_number=f"PO-RACE-{tenant_id}", item_id=garment.id,
+            planned_quantity=Decimal("10"), uom_id=piece.id, location_id=outlet.id,
+            status=ProductionStatus.IN_PROGRESS,
+        )
+        s.add(order)
+        s.commit()
+        order_id, item_id, outlet_id = order.id, garment.id, outlet.id
+    s.close()
+
+    ok, errors = [], []
+
+    def worker(qty):
+        s = Session()
+        try:
+            s.execute(sa.text("SET LOCAL lock_timeout = '10s'"))
+            with tenant_scope(tenant_id):
+                order = s.get(ProductionOrder, order_id)
+                prod.record_output(s, order, Decimal(qty))
+                s.commit()
+                ok.append(qty)
+        except Exception as e:  # noqa: BLE001 - collected and asserted on
+            s.rollback()
+            errors.append(e)
+        finally:
+            s.close()
+
+    threads = [threading.Thread(target=worker, args=(q,)) for q in ("6", "6")]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(ok) == 1, f"both outputs succeeded: {ok} - order plans 10, this would produce 12"
+    assert len(errors) == 1
+    assert isinstance(errors[0], prod.ProductionError)
+
+    s = Session()
+    try:
+        with tenant_scope(tenant_id):
+            order = s.get(ProductionOrder, order_id)
+            level = s.query(StockLevel).filter(
+                StockLevel.variant_id == item_id, StockLevel.outlet_id == outlet_id
+            ).first()
+            replay = s.execute(sa.text(
+                "SELECT coalesce(sum(quantity_delta),0) FROM stock_movements WHERE variant_id = :i"
+            ), {"i": item_id}).scalar_one()
+
+        assert order.produced_quantity == Decimal("6")
+        assert level.quantity == Decimal("6")
+        assert level.quantity == replay, "ledger and cached stock disagree after concurrent output"
+    finally:
+        with tenant_scope(None):
+            for stmt, params in (
+                ("DELETE FROM production_outputs WHERE production_order_id = :o", {"o": order_id}),
+                ("DELETE FROM production_order_materials WHERE production_order_id = :o", {"o": order_id}),
+                ("DELETE FROM production_orders WHERE id = :o", {"o": order_id}),
+                ("DELETE FROM stock_movements WHERE variant_id = :i", {"i": item_id}),
+                ("DELETE FROM stock_levels WHERE variant_id = :i", {"i": item_id}),
+                ("DELETE FROM items WHERE tenant_id = :t", {"t": tenant_id}),
+                ("DELETE FROM units_of_measure WHERE tenant_id = :t", {"t": tenant_id}),
+                ("DELETE FROM uom_categories WHERE tenant_id = :t", {"t": tenant_id}),
+                ("DELETE FROM outlets WHERE tenant_id = :t", {"t": tenant_id}),
+                ("DELETE FROM tenants WHERE id = :t", {"t": tenant_id}),
+            ):
+                s.execute(sa.text(stmt), params)
+            s.commit()
+        s.close()

@@ -5,12 +5,15 @@ services.goods_receipt.post_receipt, and every posting is tied to a real
 document with a date and a receiver.
 """
 
+import threading
 from datetime import datetime, timezone
 from decimal import Decimal
 
 import pytest
 import sqlalchemy as sa
+from sqlalchemy.orm import sessionmaker
 
+from app.core.tenant_context import tenant_scope
 from app.models.goods_receipt import (
     GoodsReceipt,
     GoodsReceiptItem,
@@ -18,10 +21,12 @@ from app.models.goods_receipt import (
     PurchaseReturnItem,
     ReceiptStatus,
 )
-from app.models.inventory import MovementType
-from app.models.product import ItemType
+from app.models.inventory import MovementType, StockLevel
+from app.models.outlet import Outlet
+from app.models.product import Item, ItemType
+from app.models.tenant import Tenant
+from app.models.uom import ItemUomConversion, UnitOfMeasure, UomCategory
 from app.models.purchase import PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus
-from app.models.uom import ItemUomConversion
 from app.models.vendor import Vendor
 from app.services import goods_receipt as gr
 from app.services.inventory import apply_stock_delta
@@ -359,3 +364,118 @@ def test_failed_posting_rolls_back_completely(db, tenant, warehouse, vendor):
     assert stock_of(db, fabric.id, warehouse.id) == Decimal("0")
     assert db.execute(sa.text("SELECT count(*) FROM stock_movements")).scalar_one() == before_moves
     assert_ledger_reconciles(db)
+
+
+# ------------------------------------------------------------ concurrency
+#
+# Phase 10 hardening. post_receipt() reads Item.cost_price, recomputes the
+# weighted average, then writes it back - a classic lost-update shape if two
+# receipts for the same item land at once. It is only safe because
+# get_or_create_stock_level() takes the stock_levels row lock *before* that
+# read, serializing the two postings on the same row. This test proves it on
+# real threads and real connections rather than trusting the ordering by
+# inspection - a mocked lock would prove nothing about the actual DB.
+#
+# The assertion works regardless of which posting wins the race: weighted
+# average is path-independent when each step correctly sees the other's
+# result, so 10 @ 100 (opening) + 5 @ 200 + 5 @ 300, in EITHER order, must
+# land on exactly (1000 + 1000 + 1500) / 20 = 175. A lost update (one
+# posting working off a stale on-hand/cost pair) would not land on 175.
+
+_GR_TENANT_SEQ = iter(range(9700, 9800))
+
+
+def test_concurrent_receipts_do_not_lose_a_cost_update(_database):
+    tenant_id = next(_GR_TENANT_SEQ)
+    Session = sessionmaker(bind=_database)
+    s = Session()
+    s.execute(sa.text("SET LOCAL lock_timeout = '10s'"))
+    with tenant_scope(tenant_id):
+        s.add(Tenant(id=tenant_id, company_name="GR Co", slug=f"gr-co-{tenant_id}"))
+        s.flush()
+        outlet = Outlet(name="GR Store", code="GRS")
+        s.add(outlet)
+        category = UomCategory(code="LENGTH", name="Length")
+        s.add(category)
+        s.flush()
+        metre = UnitOfMeasure(code="M", name="Meter", category_id=category.id,
+                              factor_to_base=Decimal("1"), is_base=True)
+        s.add(metre)
+        s.flush()
+        item = Item(sku=f"GR-RACE-{tenant_id}", name="GR Race Fabric",
+                    item_type=ItemType.RAW_MATERIAL, stock_uom_id=metre.id,
+                    cost_price=Decimal("100"))
+        s.add(item)
+        s.flush()
+        s.add(StockLevel(variant_id=item.id, outlet_id=outlet.id, quantity=Decimal("10")))
+        from app.models.inventory import StockMovement
+        s.add(StockMovement(variant_id=item.id, outlet_id=outlet.id,
+                            movement_type=MovementType.OPENING_STOCK,
+                            quantity_delta=Decimal("10"), unit_cost=Decimal("100")))
+        s.commit()
+        item_id, outlet_id, metre_id = item.id, outlet.id, metre.id
+    s.close()
+
+    def worker(cost):
+        s = Session()
+        try:
+            s.execute(sa.text("SET LOCAL lock_timeout = '10s'"))
+            with tenant_scope(tenant_id):
+                r = GoodsReceipt(
+                    receipt_number=f"GRN-RACE-{tenant_id}-{cost}", outlet_id=outlet_id,
+                    status=ReceiptStatus.DRAFT,
+                )
+                s.add(r)
+                s.flush()
+                s.add(GoodsReceiptItem(
+                    goods_receipt_id=r.id, item_id=item_id, quantity=Decimal("5"),
+                    uom_id=metre_id, quantity_in_stock_uom=Decimal("5"),
+                    unit_cost=Decimal(cost),
+                ))
+                s.flush()
+                s.refresh(r)
+                gr.post_receipt(s, r)
+                s.commit()
+        finally:
+            s.close()
+
+    threads = [threading.Thread(target=worker, args=(c,)) for c in ("200", "300")]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    s = Session()
+    try:
+        with tenant_scope(tenant_id):
+            level = s.query(StockLevel).filter(
+                StockLevel.variant_id == item_id, StockLevel.outlet_id == outlet_id
+            ).first()
+            item = s.get(Item, item_id)
+            replay = s.execute(sa.text(
+                "SELECT coalesce(sum(quantity_delta),0) FROM stock_movements WHERE variant_id = :i"
+            ), {"i": item_id}).scalar_one()
+
+        assert level.quantity == Decimal("20"), f"expected 20 on hand, got {level.quantity}"
+        assert level.quantity == replay, "ledger and cached stock disagree after concurrent receipts"
+        assert item.cost_price == Decimal("175.0000"), (
+            f"expected weighted average 175 regardless of posting order, got {item.cost_price} - "
+            "a lost update means one receipt's cost recalculation overwrote the other's"
+        )
+    finally:
+        with tenant_scope(None):
+            for stmt, params in (
+                ("DELETE FROM goods_receipt_items WHERE goods_receipt_id IN "
+                 "(SELECT id FROM goods_receipts WHERE tenant_id = :t)", {"t": tenant_id}),
+                ("DELETE FROM goods_receipts WHERE tenant_id = :t", {"t": tenant_id}),
+                ("DELETE FROM stock_movements WHERE variant_id = :i", {"i": item_id}),
+                ("DELETE FROM stock_levels WHERE variant_id = :i", {"i": item_id}),
+                ("DELETE FROM items WHERE tenant_id = :t", {"t": tenant_id}),
+                ("DELETE FROM units_of_measure WHERE tenant_id = :t", {"t": tenant_id}),
+                ("DELETE FROM uom_categories WHERE tenant_id = :t", {"t": tenant_id}),
+                ("DELETE FROM outlets WHERE tenant_id = :t", {"t": tenant_id}),
+                ("DELETE FROM tenants WHERE id = :t", {"t": tenant_id}),
+            ):
+                s.execute(sa.text(stmt), params)
+            s.commit()
+        s.close()

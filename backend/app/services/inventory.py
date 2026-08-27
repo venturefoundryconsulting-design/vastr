@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.money import quantity as q
@@ -13,11 +14,32 @@ def get_or_create_stock_level(db: Session, variant_id: int, outlet_id: int) -> S
         .with_for_update()
         .first()
     )
-    if not level:
+    if level:
+        return level
+
+    # FOR UPDATE locks an existing row - it locks nothing when there isn't one
+    # yet, so two concurrent first-touches of the same (item, outlet) can both
+    # reach here and both try to INSERT. Whichever commits first wins; the
+    # other's INSERT raises IntegrityError on the unique constraint rather than
+    # blocking. The fix is to treat that as "someone else just created it": roll
+    # back to the savepoint and re-select FOR UPDATE, which now blocks on the
+    # winner's still-open transaction exactly as a normal lock would, and
+    # returns its row once the winner commits.
+    savepoint = db.begin_nested()
+    try:
         level = StockLevel(variant_id=variant_id, outlet_id=outlet_id, quantity=Decimal("0"))
         db.add(level)
         db.flush()
-    return level
+        savepoint.commit()
+        return level
+    except IntegrityError:
+        savepoint.rollback()
+        return (
+            db.query(StockLevel)
+            .filter(StockLevel.variant_id == variant_id, StockLevel.outlet_id == outlet_id)
+            .with_for_update()
+            .one()
+        )
 
 
 def apply_stock_delta(

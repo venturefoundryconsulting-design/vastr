@@ -638,6 +638,60 @@ state, and Materials/Output/Quality & rework/Wastage/Cost all rendered
 correctly with real numbers.
 
 
+## Phase 10 — Hardening — ✅ DONE (`5088dc2fa65d`)
+
+The original spec's last remaining phase besides AI assistance. Four concrete
+deliverables:
+
+**Ledger-replay and reservation-concurrency tests already existed** from
+Phase 3A/3D (`test_ledger_integrity.py`, the threaded tests in
+`test_material_flow.py`) — this phase extended that same real-threads-on-
+real-connections discipline to the two newer money/quantity paths that had
+never been proven under a race: goods receipt costing and production output.
+
+**A real concurrency bug, found and fixed.** `get_or_create_stock_level`'s
+`SELECT ... FOR UPDATE` locks an existing row — it locks nothing when the row
+doesn't exist yet, so two concurrent first-touches of the same `(item,
+outlet)` could both reach the INSERT and one would raise a raw
+`IntegrityError` instead of correctly serializing. Fixed with a savepoint:
+attempt the insert, and on a unique-constraint collision roll back to the
+savepoint and re-`SELECT ... FOR UPDATE`, which now blocks on the winner's
+still-open transaction exactly like a normal lock would. Caught by
+`test_concurrent_output_cannot_overproduce` in `test_production_output.py`,
+which failed with that exact `IntegrityError` before the fix.
+
+**A second real bug, found by the same test batch.**
+`goods_receipt._update_average_cost` read `item.cost_price` from an ORM
+object fetched *before* `post_receipt` acquired the stock-level lock — so a
+concurrent receipt that committed a new cost in the meantime was invisible to
+it. `test_concurrent_receipts_do_not_lose_a_cost_update` failed reproducibly
+(cost landed on 125 instead of the correct order-independent 175) until the
+fix: `db.refresh(item, attribute_names=["cost_price"])` at the top of
+`_update_average_cost`, after the lock is held. Known remaining limitation,
+documented in the docstring rather than silently accepted: the average is
+computed across *all* locations for the item, but the lock is per-location,
+so two receipts for the same item at two *different* outlets are not
+serialized against each other. Fixing that would mean locking every
+`stock_levels` row for the item, not just the receiving one - a bigger change
+than this phase's scope, and not something any current deployment's usage
+pattern has hit.
+
+**Index review.** `stock_movements` — the ledger, queried by every
+availability check, cost calculation and reconciliation — had no index
+beyond its primary key. Added `(tenant_id, variant_id, outlet_id)`, which is
+the exact filter/group-by triple every one of those call sites uses.
+
+**Backup and restore runbook.** `BACKUP_RESTORE_RUNBOOK.md` at the repo root:
+daily `pg_dump` via host cron (not in-container), an explicit restore
+procedure that stops the backend first, and — specific to this codebase - the
+ledger-reconciliation query as a required post-restore check, not just "does
+the app load."
+
+Deployment documentation for the one environment that's actually live
+(`DEPLOY_VASTR_SPACE.md`) already existed from the go-live push; not
+duplicated here.
+
+
 ## Architectural decisions on record
 
 **1. Tailors do not own inventory locations.** A tailor is a resource (an employee
