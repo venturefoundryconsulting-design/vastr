@@ -10,6 +10,7 @@ from app.core.tenant_context import register_tenant_isolation
 from app.middleware.tenant import TenantContextMiddleware
 from app.services.campaign_scheduler import campaign_scheduler_loop
 from app.routers import (
+    ai_import,
     mrp,
     goods_receipts,
     made_to_order,
@@ -107,6 +108,7 @@ app.include_router(workforce.router)
 app.include_router(quality.router)
 app.include_router(made_to_order.router)
 app.include_router(goods_receipts.router)
+app.include_router(ai_import.router)
 app.include_router(mrp.router)
 app.include_router(items.router)
 app.include_router(items.uom_router)

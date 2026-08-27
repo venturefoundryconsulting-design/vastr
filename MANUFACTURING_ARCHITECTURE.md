@@ -692,6 +692,68 @@ Deployment documentation for the one environment that's actually live
 duplicated here.
 
 
+## Phase 9 — AI-assisted invoice import — ✅ DONE (`c1a4f9e2b7d3`)
+
+The original spec's last remaining phase, deliberately built after everything
+else per its own instruction ("deliberately last... extraction that writes
+into a schema still in flux produces bad master data that is expensive to
+unpick"). Scoped to its first concrete target: vendor invoice → goods
+receipt.
+
+**Staging, never direct write** — the same discipline the spec named up
+front. `ai_import_batches` / `ai_import_rows` hold everything the model
+extracted, with a confidence score per field. Nothing there is master data
+and nothing moves stock. `approve_batch` is the one function that writes
+outside those two tables, and what it writes is a DRAFT `GoodsReceipt` -
+still one explicit "Post" away from touching inventory, exactly like a
+manually-entered receipt. Two human gates, not one: a person reviews what the
+model read, and a separate action still commits it to stock.
+
+**One network call, kept small on purpose.** `call_extraction` is the only
+function in `app/services/ai_import.py` that talks to OpenAI - a single
+vision chat completion in JSON mode, using the tenant's own
+`hardware_ai_settings.openai_api_key`/`openai_model` (config storage that
+already existed from the branding/hardware work, unconsumed until now).
+Everything downstream works off the plain dict it returns, so the 14 tests in
+`test_ai_import.py` never make a real API call - they build the dict a
+response would produce and feed it straight to `create_batch`.
+
+**Matching is a proposal, not an oracle.** `match_item` is deliberately a
+simple case-insensitive name/SKU search, not a trigram or embedding lookup:
+exact name match scores 0.95, a substring match 0.6, a shared >3-letter word
+0.4, no match 0 and the row is flagged `is_new_item`. Every match is
+overridable in the review screen before approval; the point of the score is
+to tell a human where to look twice, not to auto-decide.
+
+**New items are created only on approval, never at extraction.** An
+unmatched line proposes a new raw material (SKU required from the reviewer)
+and the `Item` row is created inside `approve_batch`, in the same flush as
+the goods-receipt line that will receive it - so a rejected or abandoned
+batch never leaves an orphan item behind.
+
+**Frontend**: `pages/AiImport.tsx` - upload (outlet required, vendor
+optional, JPEG/PNG/WebP under 8MB) into a batch list, a review modal with an
+editable rows table (quantity, unit cost, item match, proposed SKU, unit of
+measure, include/exclude), confidence badges color-coded at 80%/50%
+thresholds, and Approve/Reject actions. A missing unit of measure is a hard
+stop at approval (mirrors the backend's own validation) with an inline
+selector to fix it, rather than a row silently failing at the API call.
+
+**Verified**: `tsc -b` and `npm run build` clean; logged into the real local
+app and opened the upload modal (outlet/vendor selects, dropzone, the
+"pick an outlet first" gate) - not a real extraction, since that needs a live
+OpenAI key nothing in this environment has. Backend: 355 passed, 1 skipped,
+including all 14 new tests with zero real network calls.
+
+**Not built in this pass** (fast-follow candidates, not required by the
+brief given the scope already delivered): PDF invoice support (image-only for
+now - a photo of a printed invoice works, a PDF export does not until
+converted), and the catalogue/price-list import target the spec also
+mentioned - the staging schema and review-UI pattern here would extend to it
+directly, but it is a second, separate extraction prompt and matching
+question, not a natural extension of this batch.
+
+
 ## Architectural decisions on record
 
 **1. Tailors do not own inventory locations.** A tailor is a resource (an employee

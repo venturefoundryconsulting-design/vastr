@@ -1,6 +1,7 @@
 import {
   AppstoreOutlined,
   ArrowDownOutlined,
+  RobotOutlined,
   ArrowUpOutlined,
   BarChartOutlined,
   ContactsOutlined,
@@ -91,6 +92,7 @@ const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
       { key: "/vendors", icon: <TeamOutlined />, label: "Vendors", minRole: "manager" },
       { key: "/purchase-orders", icon: <TruckOutlined />, label: "Purchase Orders", minRole: "manager" },
       { key: "/goods-receipts", icon: <TruckOutlined />, label: "Goods Receipts", minRole: "manager" },
+      { key: "/ai-import", icon: <RobotOutlined />, label: "AI Invoice Import", minRole: "manager" },
       { key: "/transfers", icon: <SwapOutlined />, label: "Stock Transfers", minRole: "manager" },
     ],
   },

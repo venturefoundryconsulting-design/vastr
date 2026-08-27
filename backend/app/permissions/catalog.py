@@ -86,6 +86,8 @@ PERMISSION_CATALOG: list[tuple[str, str, str]] = [
     ("purchase_returns.manage", "Purchasing", "Send goods back to a vendor"),
     ("mrp.view", "Purchasing", "View material requirement planning"),
     ("mrp.generate_po", "Purchasing", "Draft purchase orders from MRP shortages"),
+    ("ai_import.create", "Purchasing", "Upload a vendor invoice for AI extraction"),
+    ("ai_import.approve", "Purchasing", "Approve an AI-extracted invoice into a draft goods receipt"),
     ("outlets.manage", "Admin", "Create and edit outlets"),
 ]
 
@@ -117,6 +119,7 @@ ROLE_GRANTS: dict[UserRole, set[str]] = {
         "purchase_returns.manage", "mrp.view", "mrp.generate_po",
         "bom.view", "bom.cost.view", "production.view",
         "materials.view", "materials.issue", "materials.return",
+        "ai_import.create", "ai_import.approve",
     },
     UserRole.OUTLET_STAFF: {
         "pos.access", "sales.view", "sales.create", "customers.view",

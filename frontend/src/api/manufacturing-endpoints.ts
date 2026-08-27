@@ -12,6 +12,10 @@
 
 import { apiClient } from "./client";
 import type {
+  AiImportBatchOut,
+  AiImportBatchSummary,
+  AiImportRowOut,
+  AiImportStatus,
   CustomerOrderOut,
   Fulfilment,
   GoodsReceiptOut,
@@ -186,3 +190,31 @@ export const deliverCustomerOrder = (id: number, payment_mode = "cash", discount
   apiClient.post<CustomerOrderOut>(`/api/customer-orders/${id}/deliver`, { payment_mode, discount_amount });
 export const cancelCustomerOrder = (id: number, reason?: string) =>
   apiClient.post<CustomerOrderOut>(`/api/customer-orders/${id}/cancel`, { reason });
+
+// ------------------------------------------------------------- AI import (Phase 9)
+
+export const listAiImportBatches = (status?: AiImportStatus) =>
+  apiClient.get<AiImportBatchSummary[]>("/api/ai-import", { params: status ? { status } : {} });
+export const getAiImportBatch = (id: number) =>
+  apiClient.get<AiImportBatchOut>(`/api/ai-import/${id}`);
+export const extractAiImportInvoice = (file: File, outletId: number, vendorId?: number) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const params: Record<string, number> = { outlet_id: outletId };
+  if (vendorId) params.vendor_id = vendorId;
+  return apiClient.post<AiImportBatchOut>("/api/ai-import/extract", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    params,
+  });
+};
+export const patchAiImportRow = (
+  rowId: number,
+  data: Partial<{
+    raw_description: string; quantity: number; unit_cost: number; uom_id: number | null;
+    matched_item_id: number | null; is_new_item: boolean; proposed_sku: string | null; excluded: boolean;
+  }>,
+) => apiClient.patch<AiImportRowOut>(`/api/ai-import/rows/${rowId}`, data);
+export const approveAiImportBatch = (id: number) =>
+  apiClient.post<AiImportBatchOut>(`/api/ai-import/batches/${id}/approve`);
+export const rejectAiImportBatch = (id: number) =>
+  apiClient.post<AiImportBatchOut>(`/api/ai-import/batches/${id}/reject`);

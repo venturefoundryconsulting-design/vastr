@@ -32,6 +32,7 @@ import CustomerOrders from "./pages/CustomerOrders";
 import CustomerOrderDetail from "./pages/CustomerOrderDetail";
 import GoodsReceipts from "./pages/GoodsReceipts";
 import Mrp from "./pages/Mrp";
+import AiImport from "./pages/AiImport";
 import Items from "./pages/Items";
 import Units from "./pages/Units";
 import Products from "./pages/Products";
@@ -141,6 +142,7 @@ export default function App() {
       <Route path="/customer-orders/:id" element={<Protected><CustomerOrderDetail /></Protected>} />
       <Route path="/goods-receipts" element={<Protected minRole="manager"><GoodsReceipts /></Protected>} />
       <Route path="/mrp" element={<Protected minRole="manager"><Mrp /></Protected>} />
+      <Route path="/ai-import" element={<Protected minRole="manager"><AiImport /></Protected>} />
       <Route path="/units" element={<Protected minRole="manager"><Units /></Protected>} />
       <Route path="/discounts" element={<Protected minRole="manager"><Discounts /></Protected>} />
       <Route path="/inventory" element={<Protected><Inventory /></Protected>} />

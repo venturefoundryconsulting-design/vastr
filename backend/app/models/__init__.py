@@ -1,4 +1,5 @@
 from app.core.database import Base
+from app.models.ai_import import AiImportBatch, AiImportRow, AiImportStatus
 from app.models.alteration import Alteration, AlterationStatus
 from app.models.bom import Bom, BomComponent, BomComponentSubstitute, BomStatus, BomVersion
 from app.models.campaign import (

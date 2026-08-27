@@ -403,3 +403,55 @@ export interface ReadinessOut {
   all_ready: boolean;
   lines: ReadinessLine[];
 }
+
+// ------------------------------------------------------------- AI import (Phase 9)
+
+export type AiImportStatus = "pending" | "approved" | "rejected";
+
+export interface AiImportRowOut {
+  id: number;
+  line_no: number;
+  raw_description: string;
+  raw_unit_text?: string | null;
+  matched_item_id?: number | null;
+  matched_item_name?: string | null;
+  matched_item_sku?: string | null;
+  is_new_item: boolean;
+  proposed_sku?: string | null;
+  quantity: number;
+  uom_id?: number | null;
+  uom_code?: string | null;
+  unit_cost: number;
+  description_confidence?: number | null;
+  quantity_confidence?: number | null;
+  cost_confidence?: number | null;
+  match_confidence?: number | null;
+  excluded: boolean;
+}
+
+export interface AiImportBatchOut {
+  id: number;
+  outlet_id: number;
+  outlet_name?: string | null;
+  vendor_id?: number | null;
+  vendor_name?: string | null;
+  source_filename: string;
+  status: AiImportStatus;
+  vendor_name_guess?: string | null;
+  invoice_ref_guess?: string | null;
+  goods_receipt_id?: number | null;
+  goods_receipt_number?: string | null;
+  notes?: string | null;
+  created_at: string;
+  rows: AiImportRowOut[];
+}
+
+export interface AiImportBatchSummary {
+  id: number;
+  outlet_name?: string | null;
+  vendor_name?: string | null;
+  source_filename: string;
+  status: AiImportStatus;
+  line_count: number;
+  created_at: string;
+}
