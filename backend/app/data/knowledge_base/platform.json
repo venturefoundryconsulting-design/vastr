@@ -1,0 +1,168 @@
+[
+  {
+    "id": "platform.signup.screen",
+    "type": "screen",
+    "module": "platform",
+    "screen": "signup",
+    "route": "/signup",
+    "title": "Signup",
+    "answer": "Signup creates a new store: store details, plan selection, and email verification, in that order. Creates the business, owner login, a default outlet, and default settings all together - nothing further needs setting up before the store is usable, though most stores will still want to add real business details and a logo under Settings.",
+    "keywords": ["signup", "new store", "create account"],
+    "related": ["platform.signup.slug-rules", "platform.signup.trial"]
+  },
+  {
+    "id": "platform.signup.slug-rules",
+    "type": "business_rule",
+    "module": "platform",
+    "screen": "signup",
+    "title": "What are the rules for a store's URL (slug)?",
+    "answer": "Lowercase letters, numbers, and hyphens, 3-40 characters, checked for availability as you type. Cannot be one of a fixed list of reserved words (admin, api, www, and similar) or anything the platform operator has separately reserved via the Sub-domain Config screen.",
+    "keywords": ["slug", "store url", "reserved word"],
+    "related": ["platform.signup.screen"]
+  },
+  {
+    "id": "platform.signup.trial",
+    "type": "business_rule",
+    "module": "platform",
+    "screen": "signup",
+    "title": "Does selecting a plan at signup charge anything immediately?",
+    "answer": "No. Every new store starts on a 30-day trial regardless of which plan was picked, with the option to pay right away instead of waiting out the trial.",
+    "keywords": ["trial period", "plan selection", "no charge"],
+    "related": ["platform.billing.one-time-not-recurring"]
+  },
+  {
+    "id": "platform.login.blocking-conditions",
+    "type": "business_rule",
+    "module": "platform",
+    "screen": "login",
+    "title": "What can block a login besides a wrong password?",
+    "answer": "Two account-level gates are checked before password verification even completes its downstream effect: the store's email not yet verified (self-service signups only - Super Admin accounts skip this), and the store being inactive or its subscription Suspended/Cancelled. Both block every login attempt outright.",
+    "keywords": ["login blocked", "cannot log in", "account inactive", "email not verified"],
+    "related": ["platform.troubleshooting.no-verification-email", "platform.troubleshooting.login-blocked-not-password"]
+  },
+  {
+    "id": "platform.troubleshooting.no-verification-email",
+    "type": "troubleshooting",
+    "module": "platform",
+    "title": "A new store's owner never received the verification email",
+    "answer": "If the platform's outbound email isn't configured, the verification link is written to the server's own logs rather than actually emailed - worth checking with whoever runs the platform before assuming the recipient's inbox is at fault. The Resend option on the verification screen is safe to use once email is confirmed working.",
+    "keywords": ["no verification email", "email not received"],
+    "related": ["platform.login.blocking-conditions"]
+  },
+  {
+    "id": "platform.troubleshooting.login-blocked-not-password",
+    "type": "troubleshooting",
+    "module": "platform",
+    "title": "A store can't log in, and the error doesn't mention a wrong password",
+    "answer": "Check the store's status in the Super Admin Fashion Brands screen rather than assuming a credentials problem - a tenant marked inactive or with a Suspended/Cancelled subscription blocks every login attempt before password is even relevant.",
+    "keywords": ["login error", "account suspended", "not a password issue"],
+    "related": ["platform.login.blocking-conditions"]
+  },
+
+  {
+    "id": "platform.billing.no-feature-gating",
+    "type": "known_issue",
+    "module": "platform",
+    "screen": "billing",
+    "severity": "missing",
+    "fixed": false,
+    "title": "Subscription plans don't actually restrict any feature yet",
+    "answer": "Plans exist as a menu of names and prices (Free / Starter / Professional / Enterprise), but nothing in the running application currently restricts what a store can do based on its plan. Every feature works the same regardless of plan tier. Don't rely on plan tier as an access-control mechanism today; it isn't one.",
+    "keywords": ["plan limits", "feature gating", "no restriction"],
+    "related": []
+  },
+  {
+    "id": "platform.billing.pricing-in-three-places",
+    "type": "known_issue",
+    "module": "platform",
+    "screen": "billing",
+    "severity": "defect",
+    "fixed": false,
+    "title": "Plan prices are kept in three separate places",
+    "answer": "The pricing page a prospect sees, the billing logic that actually charges a card, and the Super Admin overview's revenue estimate each hold their own copy of plan prices, with no single shared source. A price change made in one place won't automatically appear in the others.",
+    "keywords": ["pricing inconsistent", "price mismatch"],
+    "related": []
+  },
+  {
+    "id": "platform.billing.one-time-not-recurring",
+    "type": "business_rule",
+    "module": "platform",
+    "screen": "billing",
+    "title": "Is subscription billing automatic and recurring?",
+    "answer": "No. Paying immediately is a one-time card payment that activates the subscription, not a recurring auto-billing arrangement. There's no webhook-driven renewal built in yet, so renewal today is a manual/support process.",
+    "keywords": ["recurring billing", "auto renew", "one time payment"],
+    "related": ["platform.signup.trial"]
+  },
+
+  {
+    "id": "platform.super-admin.isolation",
+    "type": "permission",
+    "module": "platform",
+    "title": "Can a Super Admin see an individual store's data?",
+    "answer": "By design, no - not anywhere in the ordinary tenant app. A Super Admin token grants no access to any individual store's screens; trying to open a normal store screen with this account is blocked the same as if logged out. Cross-store visibility exists only inside the Super Admin panel's own screens (Overview, Fashion Brands, Subscriptions, Activity, etc).",
+    "keywords": ["super admin access", "tenant isolation", "cross tenant"],
+    "related": ["platform.super-admin.tenants-screen"]
+  },
+  {
+    "id": "platform.super-admin.tenants-screen",
+    "type": "screen",
+    "module": "platform",
+    "screen": "super-admin-tenants",
+    "route": "/platform-admin/tenants",
+    "title": "Fashion Brands (Super Admin Tenants screen)",
+    "answer": "Every store on the platform: search, create one directly (skipping public signup and its email verification), edit plan/status, see usage stats (users, outlets, products), see its users, reset a user's password, and view its activity log. Source-verified only in this documentation pass - not yet confirmed against a live Super Admin session.",
+    "keywords": ["tenants", "fashion brands", "super admin store list"],
+    "related": ["platform.super-admin.delete-is-soft", "platform.super-admin.isolation"]
+  },
+  {
+    "id": "platform.super-admin.delete-is-soft",
+    "type": "business_rule",
+    "module": "platform",
+    "screen": "super-admin-tenants",
+    "title": "What happens when a Super Admin deletes a store?",
+    "answer": "Deleting a store does not destroy its data. It marks the store inactive and cancels its subscription, leaving everything else intact - a deliberate choice, since permanently destroying a paying customer's history by accident is treated as the worse failure mode. There is currently no way, from this panel, to permanently and irreversibly erase a store's data.",
+    "keywords": ["delete tenant", "soft delete", "cannot permanently delete"],
+    "related": ["platform.super-admin.tenants-screen"]
+  },
+  {
+    "id": "platform.super-admin.created-account-preverified",
+    "type": "business_rule",
+    "module": "platform",
+    "screen": "super-admin-tenants",
+    "title": "Does a store created directly by a Super Admin need email verification?",
+    "answer": "No - its owner account is marked verified immediately, skipping the email-confirmation step self-service signups go through. A platform operator creating an account this way has already effectively vouched for it.",
+    "keywords": ["admin created tenant", "pre-verified", "no email verification"],
+    "related": ["platform.super-admin.tenants-screen"]
+  },
+  {
+    "id": "platform.super-admin.global-settings",
+    "type": "screen",
+    "module": "platform",
+    "screen": "super-admin-settings",
+    "route": "/platform-admin/settings",
+    "title": "Global Settings (Super Admin)",
+    "answer": "Configures the platform's own outbound email (used for verification emails and other system mail - entirely separate from any individual store's own Email Integrations) and the platform's own payment merchant account used to actually collect subscription payments.",
+    "keywords": ["global settings", "platform email", "platform payment"],
+    "related": ["platform.troubleshooting.no-verification-email"]
+  },
+  {
+    "id": "platform.super-admin.activity",
+    "type": "screen",
+    "module": "platform",
+    "screen": "super-admin-activity",
+    "route": "/platform-admin/activity",
+    "title": "Activity (Super Admin)",
+    "answer": "An audit feed across every store at once, not scoped to one - the single place to answer \"who did what, anywhere on the platform, recently.\"",
+    "keywords": ["audit log", "activity feed", "cross store"],
+    "related": []
+  },
+  {
+    "id": "platform.troubleshooting.plan-limit-not-enforced",
+    "type": "troubleshooting",
+    "module": "platform",
+    "title": "A store's plan says \"Professional\" but a Starter-only limit doesn't seem to apply",
+    "answer": "That's expected today, not a bug to chase - plan-based feature limits aren't enforced anywhere in the running application yet, regardless of what a store's plan field says.",
+    "keywords": ["plan not enforced", "starter limit"],
+    "related": ["platform.billing.no-feature-gating"]
+  }
+]

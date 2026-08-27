@@ -1,0 +1,242 @@
+[
+  {
+    "id": "crm-marketing.customers.screen",
+    "type": "screen",
+    "module": "crm-marketing",
+    "screen": "customers",
+    "route": "/customers",
+    "title": "Customers",
+    "answer": "Customers manages the customer master: contact details, tags, credit balance, and loyalty points. Available to any authenticated user. Feeds POS (lookup and redemption), Returns (store-credit refunds), Customer Orders, and WhatsApp Marketing (segment targeting).",
+    "keywords": ["customer", "crm", "contact"],
+    "related": ["crm-marketing.customers.credit-balance", "crm-marketing.known-issue.no-permission-gate"]
+  },
+  {
+    "id": "crm-marketing.customers.credit-balance",
+    "type": "business_rule",
+    "module": "crm-marketing",
+    "screen": "customers",
+    "title": "How does a customer's credit balance work?",
+    "answer": "Credit Balance is a signed number: positive means the store owes the customer (typically from a store-credit refund); a negative balance would mean the customer owes the store. It's spent automatically the next time this customer is selected at POS and credit is applied to a sale, capped at their actual balance.",
+    "keywords": ["credit balance", "store credit", "signed number"],
+    "related": ["crm-marketing.customers.screen", "core-retail.pos.customer-required-for-redemption"]
+  },
+  {
+    "id": "crm-marketing.customers.vip-toggle",
+    "type": "business_rule",
+    "module": "crm-marketing",
+    "screen": "customers",
+    "title": "What does the VIP toggle actually change?",
+    "answer": "VIP doubles loyalty points earned on every future sale (1 point per Rs.100 becomes 2 per Rs.100) and is the qualifying condition for any discount rule marked \"VIP only\".",
+    "keywords": ["vip", "loyalty multiplier", "vip only discount"],
+    "related": ["crm-marketing.customers.screen", "core-retail.discounts.screen"]
+  },
+  {
+    "id": "crm-marketing.customers.tags-for-segments",
+    "type": "cross_module",
+    "module": "crm-marketing",
+    "title": "What are customer tags used for?",
+    "answer": "Free-form tags set on a customer are what WhatsApp Marketing's \"Tag\" segment type uses to target a campaign. Set a tag here first if you want to reach this specific group of customers later.",
+    "keywords": ["tags", "segment", "campaign targeting"],
+    "related": ["crm-marketing.campaigns.segment-types"]
+  },
+  {
+    "id": "crm-marketing.known-issue.no-permission-gate",
+    "type": "known_issue",
+    "module": "crm-marketing",
+    "screen": "customers",
+    "severity": "defect",
+    "fixed": false,
+    "title": "Viewing and editing customer records has no role restriction",
+    "answer": "Any authenticated user, any role, can view and edit the full customer record including credit balance and contact details. If a store expects only certain roles to access customer data, this is not currently enforced.",
+    "keywords": ["customer permission", "no role check"],
+    "related": ["crm-marketing.customers.screen"]
+  },
+  {
+    "id": "crm-marketing.known-issue.manual-adjustment-no-floor",
+    "type": "known_issue",
+    "module": "crm-marketing",
+    "screen": "customers",
+    "severity": "defect",
+    "fixed": false,
+    "title": "A manual credit or loyalty adjustment can push the balance negative",
+    "answer": "A manual credit or loyalty-points adjustment (distinct from what checkout redeems) has no lower-bound check, unlike redemption at checkout which is capped at the customer's actual balance. It's possible to push either figure negative through a manual adjustment.",
+    "keywords": ["negative balance", "manual adjustment", "loyalty points negative"],
+    "related": ["crm-marketing.customers.credit-balance"]
+  },
+
+  {
+    "id": "crm-marketing.alterations.screen",
+    "type": "screen",
+    "module": "crm-marketing",
+    "screen": "alterations",
+    "route": "/alterations",
+    "title": "Tailor & Alterations",
+    "answer": "Tailor & Alterations logs post-sale garment alteration jobs: customer, item, description, tailor name, status, and collection date. Available to any authenticated user; no linked sale is required to create a job.",
+    "keywords": ["alteration", "repair", "hemming"],
+    "related": ["crm-marketing.alterations.not-connected-to-tailors", "crm-marketing.alterations.tailor-name-autostatus"]
+  },
+  {
+    "id": "crm-marketing.alterations.not-connected-to-tailors",
+    "type": "cross_module",
+    "module": "crm-marketing",
+    "screen": "alterations",
+    "title": "Does an alteration job show up on a tailor's work queue?",
+    "answer": "No. Tailor & Alterations and the Manufacturing module's Tailors/Work Orders are completely unconnected - they share a word, not a data relationship. This screen's \"Tailor\" field is a plain typed name, not a link to anyone in the Manufacturing Tailors roster. A job logged here never appears on a real tailor's My Work queue, and a real tailor resource (with pay rate, skills, workload) isn't selectable here at all. If a store needs alteration jobs tracked against a real tailor's workload, use Manufacturing's Work Orders instead.",
+    "keywords": ["alteration vs tailor", "not connected", "why doesn't it show"],
+    "related": ["crm-marketing.alterations.screen", "manufacturing.tailors.screen", "manufacturing.work-orders.screen"]
+  },
+  {
+    "id": "crm-marketing.alterations.tailor-name-autostatus",
+    "type": "business_rule",
+    "module": "crm-marketing",
+    "screen": "alterations",
+    "title": "Why did an alteration's status jump to Assigned automatically?",
+    "answer": "Typing a tailor name at creation immediately sets status to Assigned instead of Requested. Leaving the tailor name blank keeps the job in Requested until someone is named.",
+    "keywords": ["auto status", "assigned status"],
+    "related": ["crm-marketing.alterations.screen"]
+  },
+  {
+    "id": "crm-marketing.known-issue.alterations-no-permission",
+    "type": "known_issue",
+    "module": "crm-marketing",
+    "screen": "alterations",
+    "severity": "defect",
+    "fixed": false,
+    "title": "Alterations has no role restriction on creating or updating jobs",
+    "answer": "Any authenticated user can create or update an alteration job - there is a permission code defined for this in the system, but it is not currently enforced by this screen.",
+    "keywords": ["alteration permission", "no role check"],
+    "related": ["crm-marketing.alterations.screen"]
+  },
+
+  {
+    "id": "crm-marketing.campaigns.screen",
+    "type": "screen",
+    "module": "crm-marketing",
+    "screen": "campaigns",
+    "route": "/campaigns",
+    "title": "WhatsApp Marketing",
+    "answer": "WhatsApp Marketing composes and sends segment-targeted campaigns: name, audience, optional schedule, message body with placeholder tokens, saved templates, and media. Requires manager role or above. Requires a WhatsApp Cloud API connection configured under Settings, and at least one customer with a phone or WhatsApp number.",
+    "keywords": ["whatsapp", "campaign", "marketing"],
+    "related": ["crm-marketing.campaigns.segment-types", "crm-marketing.campaigns.preview-audience", "crm-marketing.known-issue.no-24h-window-check"]
+  },
+  {
+    "id": "crm-marketing.campaigns.segment-types",
+    "type": "feature",
+    "module": "crm-marketing",
+    "screen": "campaigns",
+    "title": "What segment types are available for a campaign?",
+    "answer": "All customers, VIP only, a specific tag, customers who bought a category/brand within a lookback window, customers inactive for N days, or customers with a birthday this month. Every segment silently excludes anyone with no phone/WhatsApp number and anyone marked inactive - there is no way to reach either group from this screen.",
+    "keywords": ["segment", "audience", "vip segment", "birthday segment"],
+    "related": ["crm-marketing.campaigns.screen", "crm-marketing.customers.tags-for-segments"]
+  },
+  {
+    "id": "crm-marketing.campaigns.preview-audience",
+    "type": "business_rule",
+    "module": "crm-marketing",
+    "screen": "campaigns",
+    "title": "What does Preview Audience do?",
+    "answer": "A dry run - shows exactly how many customers currently match the chosen segment, with a few sample names, and sends nothing. Always check this before scheduling; a segment matching zero people will refuse to send.",
+    "keywords": ["preview audience", "dry run", "no customers match"],
+    "related": ["crm-marketing.campaigns.screen"]
+  },
+  {
+    "id": "crm-marketing.campaigns.buttons",
+    "type": "business_rule",
+    "module": "crm-marketing",
+    "screen": "campaigns",
+    "title": "Why does only a quick-reply button work in a campaign message?",
+    "answer": "Only a quick-reply button renders as a real, tappable WhatsApp button. A link, phone-number, or catalog button is appended to the message as a plain text line instead, because WhatsApp requires those to go through a pre-approved template outside an active customer conversation, which this feature doesn't use.",
+    "keywords": ["campaign button", "quick reply", "link button not working"],
+    "related": ["crm-marketing.campaigns.screen"]
+  },
+  {
+    "id": "crm-marketing.known-issue.no-24h-window-check",
+    "type": "known_issue",
+    "module": "crm-marketing",
+    "screen": "campaigns",
+    "severity": "missing",
+    "fixed": false,
+    "title": "Saved templates are not Meta-approved WhatsApp templates - watch the 24-hour window",
+    "answer": "Saved \"templates\" here are free-text snippets, not WhatsApp Business's pre-approved message templates. A message sent to a customer who hasn't messaged the business in the last 24 hours will be rejected by WhatsApp, with no warning shown in the compose screen - it will simply show as a failed delivery for that recipient afterward.",
+    "keywords": ["24 hour window", "message rejected", "template not approved"],
+    "related": ["crm-marketing.campaigns.screen"]
+  },
+  {
+    "id": "crm-marketing.known-issue.campaign-status-misleading",
+    "type": "known_issue",
+    "module": "crm-marketing",
+    "screen": "campaigns",
+    "severity": "ux",
+    "fixed": false,
+    "title": "A campaign's \"Sent\" status doesn't mean everyone received it",
+    "answer": "A campaign's overall status reads Sent the moment even a single recipient succeeds - a campaign that reached 12 of 150 people still shows Sent, not \"Mostly failed\". Open the campaign's own delivery report for the real per-recipient breakdown.",
+    "keywords": ["campaign status", "sent but not delivered", "delivery report"],
+    "related": ["crm-marketing.campaigns.screen"]
+  },
+  {
+    "id": "crm-marketing.campaigns.troubleshoot-no-receipt",
+    "type": "troubleshooting",
+    "module": "crm-marketing",
+    "screen": "campaigns",
+    "title": "A campaign shows \"Sent\" but a customer says they never received it",
+    "answer": "Open that campaign's delivery report and find their specific row - the headline Sent status only means at least one recipient succeeded. A common individual cause: no message has been sent to that customer in the last 24 hours, so WhatsApp rejected this one as outside an active conversation window.",
+    "keywords": ["customer didn't receive", "campaign troubleshooting"],
+    "related": ["crm-marketing.known-issue.no-24h-window-check", "crm-marketing.known-issue.campaign-status-misleading"]
+  },
+
+  {
+    "id": "crm-marketing.dashboard.screen",
+    "type": "screen",
+    "module": "crm-marketing",
+    "screen": "dashboard",
+    "route": "/dashboard",
+    "title": "Dashboard",
+    "answer": "Dashboard is the landing screen after login: summary tiles, a customizable widget layout, low-stock list, sales trend and payment-mode charts. Available to any authenticated user.",
+    "keywords": ["dashboard", "home screen", "landing page"],
+    "related": ["crm-marketing.dashboard.customize-personal"]
+  },
+  {
+    "id": "crm-marketing.dashboard.customize-personal",
+    "type": "business_rule",
+    "module": "crm-marketing",
+    "screen": "dashboard",
+    "title": "If I customize my Dashboard, does it change it for everyone?",
+    "answer": "No. Customize saves your layout to your own browser only - it's a personal view, not a team-wide setting, and it won't follow you to a different device or browser.",
+    "keywords": ["customize dashboard", "personal layout", "per browser"],
+    "related": ["crm-marketing.dashboard.screen"]
+  },
+
+  {
+    "id": "crm-marketing.reports.screen",
+    "type": "screen",
+    "module": "crm-marketing",
+    "screen": "reports",
+    "route": "/reports",
+    "title": "Reports",
+    "answer": "Reports has two tabs only: Stock Aging and Dead Stock, bucketing items by days since last sale (0-30 / 31-60 / 61-90 / 91-180 / 180+). Requires manager role or above.",
+    "keywords": ["reports", "stock aging", "dead stock"],
+    "related": ["crm-marketing.known-issue.manufacturing-reports-unreachable"]
+  },
+  {
+    "id": "crm-marketing.known-issue.manufacturing-reports-unreachable",
+    "type": "known_issue",
+    "module": "crm-marketing",
+    "screen": "reports",
+    "severity": "missing",
+    "fixed": false,
+    "title": "Manufacturing's cost, wastage, and tailor-productivity reports exist but have no menu path",
+    "answer": "Manufacturing has its own reports - production cost summary, wastage, and tailor productivity - fully built and working on the server, but there is no button, tab, or link anywhere in the application that opens them. They exist only as direct backend calls; nobody using the app through its normal screens can currently reach them.",
+    "keywords": ["manufacturing reports missing", "no ui", "cost report", "wastage report"],
+    "related": ["crm-marketing.reports.screen", "manufacturing.production-orders.cost-tab"]
+  },
+  {
+    "id": "crm-marketing.reports.new-item-aging",
+    "type": "business_rule",
+    "module": "crm-marketing",
+    "screen": "reports",
+    "title": "Why does a brand-new item show up in the oldest aging bucket?",
+    "answer": "An item with no sale history is treated as idle since its creation date, not excluded from these reports. A genuinely new item that hasn't sold yet will show up in the oldest bucket if it simply sits long enough, the same as a slow-moving one.",
+    "keywords": ["new item aging", "no sales history"],
+    "related": ["crm-marketing.reports.screen"]
+  }
+]

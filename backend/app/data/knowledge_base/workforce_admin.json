@@ -1,0 +1,259 @@
+[
+  {
+    "id": "workforce-admin.hrm.screen",
+    "type": "screen",
+    "module": "workforce-admin",
+    "screen": "hrm",
+    "route": "/hrm",
+    "title": "HR Management",
+    "answer": "HR Management has four tabs: My Attendance (self check-in/out, everyone), Team Attendance (manager role or above, filterable by month), My Leave Requests (submit and track your own), and Leave Approvals (manager role or above).",
+    "keywords": ["hrm", "attendance", "leave request"],
+    "related": ["workforce-admin.hrm.checkin-once-per-day", "workforce-admin.hrm.no-absent-status"]
+  },
+  {
+    "id": "workforce-admin.hrm.checkin-once-per-day",
+    "type": "business_rule",
+    "module": "workforce-admin",
+    "screen": "hrm",
+    "title": "How many times can I check in or out per day?",
+    "answer": "Once each per calendar day - the button disables itself once used. There's no way to check in twice, or to check out without having checked in first.",
+    "keywords": ["check in", "check out", "once per day"],
+    "related": ["workforce-admin.hrm.screen"]
+  },
+  {
+    "id": "workforce-admin.hrm.no-absent-status",
+    "type": "known_issue",
+    "module": "workforce-admin",
+    "screen": "hrm",
+    "severity": "ux",
+    "fixed": false,
+    "title": "There's no automatic \"Absent\" status",
+    "answer": "A staff member who simply never checks in on a given day just has no row for that day - nothing marks it Absent automatically. If a store needs a formal absence record, a manager currently has to add one by hand via a correction; it doesn't happen on its own.",
+    "keywords": ["absent", "no attendance record", "missing check in"],
+    "related": ["workforce-admin.hrm.screen"]
+  },
+  {
+    "id": "workforce-admin.hrm.leave-approval-final",
+    "type": "business_rule",
+    "module": "workforce-admin",
+    "screen": "hrm",
+    "title": "Can a leave approval decision be undone?",
+    "answer": "Approve/Reject is only available on a request still Pending. Once reviewed, that decision is final from this screen - there's no undo or re-review action.",
+    "keywords": ["leave approval", "undo", "final decision"],
+    "related": ["workforce-admin.hrm.screen"]
+  },
+
+  {
+    "id": "workforce-admin.payroll.screen",
+    "type": "screen",
+    "module": "workforce-admin",
+    "screen": "payroll",
+    "route": "/payroll",
+    "title": "Payroll",
+    "answer": "Payroll has two sections: Salary Setup (one row per staff, editable monthly salary) and Payslips (generate per month, then edit allowances/deductions and mark paid). Requires admin or owner role only - one level stricter than HR Management, where managers can already act.",
+    "keywords": ["payroll", "salary", "payslip"],
+    "related": ["workforce-admin.payroll.generate-idempotent", "workforce-admin.known-issue.no-attendance-link"]
+  },
+  {
+    "id": "workforce-admin.payroll.generate-idempotent",
+    "type": "business_rule",
+    "module": "workforce-admin",
+    "screen": "payroll",
+    "title": "What happens if I click Generate Payslips more than once for the same month?",
+    "answer": "It's safe. Anyone who already has a payslip for that month is quietly skipped, never duplicated or overwritten. A staff member's salary is locked in at the moment their payslip is generated - raising their base pay afterward never rewrites a payslip already created for an earlier month.",
+    "keywords": ["generate payslips twice", "duplicate payslip", "salary locked"],
+    "related": ["workforce-admin.payroll.screen"]
+  },
+  {
+    "id": "workforce-admin.payroll.mark-paid-idempotent",
+    "type": "business_rule",
+    "module": "workforce-admin",
+    "screen": "payroll",
+    "title": "What does Mark Paid record?",
+    "answer": "Records the payment timestamp the first time it's set. Re-confirming an already-paid payslip doesn't move that timestamp.",
+    "keywords": ["mark paid", "payment timestamp"],
+    "related": ["workforce-admin.payroll.screen"]
+  },
+  {
+    "id": "workforce-admin.known-issue.no-attendance-link",
+    "type": "known_issue",
+    "module": "workforce-admin",
+    "screen": "payroll",
+    "severity": "missing",
+    "fixed": false,
+    "title": "Payroll has no connection to Attendance or Leave records",
+    "answer": "Generating a payslip only ever looks at the salary figure, nothing else. If someone took unpaid leave, that has to be entered by hand as a deduction; the system won't calculate or suggest it from Attendance or Leave data.",
+    "keywords": ["unpaid leave deduction", "payroll attendance link"],
+    "related": ["workforce-admin.payroll.screen", "workforce-admin.hrm.screen"]
+  },
+  {
+    "id": "workforce-admin.known-issue.negative-allowance",
+    "type": "known_issue",
+    "module": "workforce-admin",
+    "screen": "payroll",
+    "severity": "defect",
+    "fixed": false,
+    "title": "Allowances and deductions accept negative numbers with no validation",
+    "answer": "There's no guard against typing a negative number into either field - a negative \"deduction\" would actually increase someone's pay. Worth double-checking any figure entered here.",
+    "keywords": ["negative deduction", "payslip validation"],
+    "related": ["workforce-admin.payroll.screen"]
+  },
+
+  {
+    "id": "workforce-admin.users.screen",
+    "type": "screen",
+    "module": "workforce-admin",
+    "screen": "users",
+    "route": "/users",
+    "title": "Users & Roles",
+    "answer": "Users & Roles manages user accounts: name, email, password, role, outlet, and an active toggle. Admin or owner role only.",
+    "keywords": ["users", "add user", "roles"],
+    "related": ["workforce-admin.users.role-list", "workforce-admin.known-issue.tailor-role-missing"]
+  },
+  {
+    "id": "workforce-admin.users.role-list",
+    "type": "permission",
+    "module": "workforce-admin",
+    "screen": "users",
+    "title": "What roles are available when creating a user?",
+    "answer": "Confirmed live: exactly seven - Tenant Owner, Admin, Manager, Sales, Inventory, Outlet Staff, Viewer. This field decides both broad screen access (a simple rank: Outlet Staff/Sales/Inventory/Viewer below Manager below Admin/Owner) and, for the newer manufacturing-era screens, a separate and much more granular set of permissions tied to the same role.",
+    "keywords": ["role list", "available roles", "role dropdown"],
+    "related": ["workforce-admin.known-issue.two-auth-systems"]
+  },
+  {
+    "id": "workforce-admin.known-issue.tailor-role-missing",
+    "type": "known_issue",
+    "module": "workforce-admin",
+    "screen": "users",
+    "severity": "missing",
+    "fixed": false,
+    "title": "The Tailor role can't be assigned through the Users screen",
+    "answer": "There is a real \"Tailor\" role in the system - the one that scopes someone to their own Work Orders queue under My Work - but it is not one of the seven options in the Role dropdown on the Users screen. There's currently no way, through normal admin self-service, to make a user a tailor with their own login.",
+    "keywords": ["tailor role missing", "cannot assign tailor", "no tailor option"],
+    "related": ["workforce-admin.users.role-list", "manufacturing.my-work.screen"]
+  },
+  {
+    "id": "workforce-admin.known-issue.two-auth-systems",
+    "type": "known_issue",
+    "module": "workforce-admin",
+    "screen": "users",
+    "severity": "defect",
+    "fixed": false,
+    "title": "Two authorization systems exist side by side, and there's no UI to inspect the fine-grained one",
+    "answer": "A simple rank (used by Users, HR Management, Payroll, Outlets, Settings) and a fine-grained permission list (used by Manufacturing, Goods Receipts, AI Import, Customer Orders) both govern access in this application. The Users screen only lets you set a role - there's no way, anywhere in the UI, to see or adjust exactly which fine-grained permissions a role carries. Those are fixed by the platform today, not customizable per store.",
+    "keywords": ["two permission systems", "rank vs permission", "no permission editor"],
+    "related": ["workforce-admin.users.role-list"]
+  },
+  {
+    "id": "workforce-admin.users.active-toggle",
+    "type": "business_rule",
+    "module": "workforce-admin",
+    "screen": "users",
+    "title": "What does turning a user inactive do?",
+    "answer": "Blocks their login immediately without deleting their account or history - the reversible way to offboard someone, rather than removing them outright.",
+    "keywords": ["deactivate user", "offboard", "block login"],
+    "related": ["workforce-admin.users.screen"]
+  },
+
+  {
+    "id": "workforce-admin.outlets.screen",
+    "type": "screen",
+    "module": "workforce-admin",
+    "screen": "outlets",
+    "route": "/outlets",
+    "title": "Outlets",
+    "answer": "Outlets manages store/warehouse locations: name, code, address, type, and an active toggle. Admin or owner role only.",
+    "keywords": ["outlets", "location", "warehouse"],
+    "related": ["workforce-admin.known-issue.outlet-code-frontend-only"]
+  },
+  {
+    "id": "workforce-admin.known-issue.outlet-code-frontend-only",
+    "type": "known_issue",
+    "module": "workforce-admin",
+    "screen": "outlets",
+    "severity": "defect",
+    "fixed": false,
+    "title": "\"Outlet code can't change after creation\" is only enforced by the screen, not the server",
+    "answer": "The edit form disables the code field once an outlet exists, because stock and transfer records reference it by that code. This rule holds through the normal screen but isn't backed by a hard guarantee in the API underneath it.",
+    "keywords": ["outlet code", "immutable code", "frontend only rule"],
+    "related": ["workforce-admin.outlets.screen"]
+  },
+
+  {
+    "id": "workforce-admin.settings.screen",
+    "type": "screen",
+    "module": "workforce-admin",
+    "screen": "settings",
+    "route": "/settings",
+    "title": "Settings",
+    "answer": "Settings has eight tabs: Business Profile, Organization, Subscription, Printing, WhatsApp, Email Integrations, SMS Integrations, and Hardware & AI. Admin or owner role only, except the public branding read the login page itself uses before anyone signs in.",
+    "keywords": ["settings", "business profile", "configuration"],
+    "related": ["workforce-admin.settings.gstin", "workforce-admin.known-issue.cannot-clear-field"]
+  },
+  {
+    "id": "workforce-admin.settings.gstin",
+    "type": "business_rule",
+    "module": "workforce-admin",
+    "screen": "settings",
+    "title": "What does setting a GSTIN actually change?",
+    "answer": "Setting a GSTIN under Business Profile is what flips every receipt from printing \"Receipt\" to printing \"Tax Invoice\" - it isn't just a stored reference number, it changes the actual printed document.",
+    "keywords": ["gstin", "tax invoice", "receipt vs invoice"],
+    "related": ["workforce-admin.settings.screen"]
+  },
+  {
+    "id": "workforce-admin.settings.printing-paper-size",
+    "type": "business_rule",
+    "module": "workforce-admin",
+    "screen": "settings",
+    "title": "Why can't the app pick which printer to use?",
+    "answer": "Paper size (A4 / thermal 58mm / thermal 80mm) is set per outlet under the Printing tab and controls document layout only. Which physical printer actually prints is chosen by staff in the browser's own print dialog every time - browsers don't let a webpage pick a specific printer, for security reasons, not a limitation of this app.",
+    "keywords": ["printer selection", "paper size", "cannot choose printer"],
+    "related": ["workforce-admin.settings.screen"]
+  },
+  {
+    "id": "workforce-admin.settings.email-sms-default-vs-enabled",
+    "type": "known_issue",
+    "module": "workforce-admin",
+    "screen": "settings",
+    "severity": "ux",
+    "fixed": false,
+    "title": "A provider can be marked \"default\" while switched off",
+    "answer": "Default and Enabled are two separate switches under Email/SMS Integrations. If a provider is default but disabled, anything trying to send through it will fail with a generic \"not configured\" message rather than a clear \"your default provider is turned off\". Check both switches if a send is failing for no obvious reason.",
+    "keywords": ["email not sending", "sms not sending", "default disabled"],
+    "related": ["workforce-admin.settings.screen"]
+  },
+  {
+    "id": "workforce-admin.known-issue.cannot-clear-field",
+    "type": "known_issue",
+    "module": "workforce-admin",
+    "screen": "settings",
+    "severity": "ux",
+    "fixed": false,
+    "title": "Clearing a field and saving doesn't actually clear it",
+    "answer": "Across every Settings tab, an empty submission is treated as \"leave this field as it is,\" not \"clear it\". To remove something once set, overwrite it with different text - there is currently no dedicated way to blank a field entirely through these forms. This is necessary for secret fields like API keys (so a blank submit doesn't wipe a saved key by accident) but applies to ordinary text fields too.",
+    "keywords": ["can't clear field", "blank field not saved", "field still shows old value"],
+    "related": ["workforce-admin.settings.screen"]
+  },
+  {
+    "id": "workforce-admin.settings.hardware-ai-tab",
+    "type": "screen",
+    "module": "workforce-admin",
+    "screen": "settings",
+    "title": "Hardware & AI settings tab",
+    "answer": "Barcode scanner settings are tuning only - scanning already works with no setup, since any USB/Bluetooth scanner types into the active field like a keyboard. Thermal printer name/IP is a label only, shown to staff as a reminder. Biometric attendance is stored for a hardware integration that doesn't exist yet - confirmed live, filling it in today does nothing. The OpenAI API key is genuinely required: AI Invoice Import (Procurement) won't let anyone upload an invoice until a key is set here.",
+    "keywords": ["hardware and ai", "openai key", "biometric attendance setting"],
+    "related": ["manufacturing.ai-import.screen"]
+  },
+  {
+    "id": "workforce-admin.settings.openai-key-fixed-copy",
+    "type": "known_issue",
+    "module": "workforce-admin",
+    "screen": "settings",
+    "severity": "ux",
+    "fixed": true,
+    "title": "The OpenAI settings card used to say it wasn't connected to anything (now fixed)",
+    "answer": "The card previously told admins none of the AI features existed yet - stale copy left over from before AI Invoice Import was built. Corrected during the ERP documentation project; it now names the feature that actually reads the key.",
+    "keywords": ["openai settings copy", "stale text", "fixed"],
+    "related": ["workforce-admin.settings.hardware-ai-tab"]
+  }
+]

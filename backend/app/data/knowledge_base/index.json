@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "description": "Structure map for the Vastr ERP knowledge base. `modules` lists each knowledge file and the screens it covers; `routes` maps a frontend path to the module/screen it belongs to, so the in-app assistant can determine context from the current URL. This file is generated from direct application inspection (Phase 1-2 of the ERP documentation project), not assumption.",
+
+  "modules": [
+    {
+      "id": "core-retail",
+      "title": "Core Retail",
+      "file": "core_retail.json",
+      "nav_groups": ["Sales", "Catalog", "Procurement"],
+      "screens": ["item-master", "products", "inventory", "purchase-orders", "vendors", "goods-receipts", "transfers", "pos", "sales-history", "returns", "discounts"]
+    },
+    {
+      "id": "manufacturing",
+      "title": "Manufacturing",
+      "file": "manufacturing.json",
+      "nav_groups": ["Catalog", "Manufacturing", "Sales", "Procurement"],
+      "screens": ["units-of-measure", "boms", "production-orders", "tailors", "work-orders", "my-work", "mrp", "customer-orders", "ai-import"]
+    },
+    {
+      "id": "crm-marketing",
+      "title": "CRM & Marketing",
+      "file": "crm_marketing.json",
+      "nav_groups": ["Customers", "Sales", "Overview", "Insights"],
+      "screens": ["customers", "alterations", "campaigns", "dashboard", "reports"]
+    },
+    {
+      "id": "workforce-admin",
+      "title": "Workforce & Admin",
+      "file": "workforce_admin.json",
+      "nav_groups": ["Workforce", "Admin"],
+      "screens": ["hrm", "payroll", "users", "outlets", "settings"]
+    },
+    {
+      "id": "platform",
+      "title": "Platform Layer",
+      "file": "platform.json",
+      "nav_groups": ["Public", "Platform Admin"],
+      "screens": ["signup", "login", "billing", "super-admin-overview", "super-admin-tenants", "super-admin-subscriptions", "super-admin-domain", "super-admin-landing", "super-admin-activity", "super-admin-settings"]
+    }
+  ],
+
+  "routes": {
+    "/dashboard": { "module": "crm-marketing", "screen": "dashboard" },
+    "/pos": { "module": "core-retail", "screen": "pos" },
+    "/sales": { "module": "core-retail", "screen": "sales-history" },
+    "/returns": { "module": "core-retail", "screen": "returns" },
+    "/alterations": { "module": "crm-marketing", "screen": "alterations" },
+    "/customer-orders": { "module": "manufacturing", "screen": "customer-orders" },
+    "/my-work": { "module": "manufacturing", "screen": "my-work" },
+    "/products": { "module": "core-retail", "screen": "products" },
+    "/items": { "module": "core-retail", "screen": "item-master" },
+    "/boms": { "module": "manufacturing", "screen": "boms" },
+    "/production": { "module": "manufacturing", "screen": "production-orders" },
+    "/units": { "module": "manufacturing", "screen": "units-of-measure" },
+    "/discounts": { "module": "core-retail", "screen": "discounts" },
+    "/inventory": { "module": "core-retail", "screen": "inventory" },
+    "/tailors": { "module": "manufacturing", "screen": "tailors" },
+    "/work-orders": { "module": "manufacturing", "screen": "work-orders" },
+    "/mrp": { "module": "manufacturing", "screen": "mrp" },
+    "/customers": { "module": "crm-marketing", "screen": "customers" },
+    "/campaigns": { "module": "crm-marketing", "screen": "campaigns" },
+    "/vendors": { "module": "core-retail", "screen": "vendors" },
+    "/purchase-orders": { "module": "core-retail", "screen": "purchase-orders" },
+    "/goods-receipts": { "module": "core-retail", "screen": "goods-receipts" },
+    "/ai-import": { "module": "manufacturing", "screen": "ai-import" },
+    "/transfers": { "module": "core-retail", "screen": "transfers" },
+    "/reports": { "module": "crm-marketing", "screen": "reports" },
+    "/hrm": { "module": "workforce-admin", "screen": "hrm" },
+    "/payroll": { "module": "workforce-admin", "screen": "payroll" },
+    "/outlets": { "module": "workforce-admin", "screen": "outlets" },
+    "/users": { "module": "workforce-admin", "screen": "users" },
+    "/settings": { "module": "workforce-admin", "screen": "settings" },
+    "/login": { "module": "platform", "screen": "login" },
+    "/signup": { "module": "platform", "screen": "signup" },
+    "/platform-admin/overview": { "module": "platform", "screen": "super-admin-overview" },
+    "/platform-admin/tenants": { "module": "platform", "screen": "super-admin-tenants" },
+    "/platform-admin/subscriptions": { "module": "platform", "screen": "super-admin-subscriptions" },
+    "/platform-admin/domain": { "module": "platform", "screen": "super-admin-domain" },
+    "/platform-admin/landing": { "module": "platform", "screen": "super-admin-landing" },
+    "/platform-admin/activity": { "module": "platform", "screen": "super-admin-activity" },
+    "/platform-admin/settings": { "module": "platform", "screen": "super-admin-settings" }
+  },
+
+  "entry_types": [
+    "screen", "workflow", "business_rule", "permission", "config", "report",
+    "troubleshooting", "faq", "cross_module", "known_issue"
+  ],
+
+  "known_issue_status": {
+    "note": "Entries of type 'known_issue' reflect actual current application behavior at the time this KB was built, verified by direct inspection or live testing - not assumptions. Two were found and fixed during the documentation pass itself (see fixed=true); the rest are open and should be treated as real until independently re-verified.",
+    "sources": ["Phase 1 code inspection (5 parallel research passes)", "Phase 2 live screen verification"]
+  }
+}

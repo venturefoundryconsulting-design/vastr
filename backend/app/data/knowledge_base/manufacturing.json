@@ -1,0 +1,367 @@
+[
+  {
+    "id": "manufacturing.units-of-measure.screen",
+    "type": "screen",
+    "module": "manufacturing",
+    "screen": "units-of-measure",
+    "route": "/units",
+    "title": "Units of Measure",
+    "answer": "Units of Measure manages UoM categories (Length, Weight, Volume, Count) and the units within each, plus item-specific packaging conversions. Requires manager role or above. A starter set exists from setup; every raw material and BOM line needs a unit from here.",
+    "keywords": ["units of measure", "uom", "category", "base unit"],
+    "related": ["manufacturing.units-of-measure.base-unit", "core-retail.item-master.uom-conversions"]
+  },
+  {
+    "id": "manufacturing.units-of-measure.base-unit",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "units-of-measure",
+    "title": "What is a base unit and why does it matter?",
+    "answer": "Exactly one unit per category is marked as the base unit - every other unit in that category converts through it automatically (1 m = 100 cm, both relative to the metre base). A base unit cannot be deactivated while it holds that role. Decimal precision is a display setting only; storage is always kept to 4 decimal places regardless.",
+    "keywords": ["base unit", "category", "conversion factor"],
+    "related": ["manufacturing.units-of-measure.screen"]
+  },
+
+  {
+    "id": "manufacturing.boms.screen",
+    "type": "screen",
+    "module": "manufacturing",
+    "screen": "boms",
+    "route": "/boms",
+    "title": "Bills of Materials (BOM)",
+    "answer": "Bills of Materials defines the recipe for a manufactured item: components, quantities, scrap percentage, and versioning. Requires manager role or above. Both the finished item and every raw material it needs must already exist in Item Master before a BOM can be built.",
+    "keywords": ["bom", "bill of materials", "recipe", "components"],
+    "related": ["manufacturing.boms.version-lock", "manufacturing.boms.scrap-percent", "manufacturing.boms.activate"]
+  },
+  {
+    "id": "manufacturing.boms.scrap-percent",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "boms",
+    "title": "What's the difference between a component's quantity and its scrap percent?",
+    "answer": "Quantity is net consumption only - what actually ends up in the finished garment. Scrap percent is expected loss added on top and is never folded into the quantity figure, so planned-vs-actual variance stays honestly answerable later. A component at 8 m quantity with 5% scrap plans to issue 8.4 m - that larger figure is what a production order actually reserves and issues.",
+    "keywords": ["scrap", "net quantity", "gross quantity", "wastage plan"],
+    "related": ["manufacturing.boms.screen"]
+  },
+  {
+    "id": "manufacturing.boms.activate",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "boms",
+    "title": "What does Activate do on a BOM version?",
+    "answer": "Activate promotes a Draft version to the one live recipe for that item, automatically archiving whichever version was active before. From that moment, every new production order for the item uses this version - orders already in flight keep using whatever version they started with.",
+    "keywords": ["activate bom", "bom version", "draft to active"],
+    "related": ["manufacturing.boms.new-version", "manufacturing.boms.version-lock"]
+  },
+  {
+    "id": "manufacturing.boms.new-version",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "boms",
+    "title": "Why can't I edit an active or archived BOM version?",
+    "answer": "New version copies the current version's lines into a fresh Draft you can edit freely, leaving the version it copied from untouched. The moment any production order actually references a BOM version, that version locks permanently, even if later archived - it can only be copied into a new version, never edited again. This is why an old, seemingly obsolete version may still be present and un-deletable: it's load-bearing for the history of every order that used it.",
+    "keywords": ["edit bom", "locked version", "new version", "why can't I edit"],
+    "related": ["manufacturing.boms.activate"]
+  },
+  {
+    "id": "manufacturing.boms.version-lock",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "boms",
+    "title": "Are multi-level BOMs and circular recipes supported?",
+    "answer": "Multi-level BOMs (a component that is itself a manufactured item with its own BOM) are supported. A component cannot be added if doing so would create a circular recipe - the system checks the full chain, not just one level deep.",
+    "keywords": ["multi-level bom", "circular", "sub-assembly"],
+    "related": ["manufacturing.boms.screen"]
+  },
+
+  {
+    "id": "manufacturing.production-orders.screen",
+    "type": "screen",
+    "module": "manufacturing",
+    "screen": "production-orders",
+    "route": "/production",
+    "title": "Production Orders",
+    "answer": "Production Orders plans and runs a manufacturing batch. Requires manager role or above and fine-grained production.*/materials.* permissions. Opening one order shows five tabs: Materials, Output, Quality & rework, Wastage, and Cost. The item needs an active BOM version before a production order can be created for it.",
+    "keywords": ["production order", "manufacturing batch", "five tabs"],
+    "related": ["manufacturing.production-orders.materials-tab", "manufacturing.production-orders.output-tab", "manufacturing.production-orders.status-automatic"]
+  },
+  {
+    "id": "manufacturing.production-orders.materials-tab",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "production-orders",
+    "title": "What's the difference between Reserve, Issue, Consume, and Return on the Materials tab?",
+    "answer": "Reserve commits stock to this order without moving it - no ledger entry is written, because nothing has physically happened; it only removes that quantity from what any other order could promise. Issue is the moment material actually leaves the shelf for the floor - a real stock movement, drawing down what's reserved first. Record consumption logs what was actually used, distinct from what was issued; the gap between issued and consumed is either returned or wasted, never left unaccounted for. Return sends unused issued material back to stock - only the portion not yet consumed or wasted can be returned.",
+    "keywords": ["reserve", "issue", "consume", "return material", "material flow"],
+    "related": ["manufacturing.production-orders.screen", "manufacturing.production-orders.issue-more-than-reserved"]
+  },
+  {
+    "id": "manufacturing.production-orders.issue-more-than-reserved",
+    "type": "troubleshooting",
+    "module": "manufacturing",
+    "screen": "production-orders",
+    "title": "\"Cannot issue - only X is reserved for this material\"",
+    "answer": "You're trying to issue more than was reserved for this line. Either reserve more first (if stock allows), or use the unreserved-issue path if your role has that specific permission - it requires a typed reason and is deliberately not the default path, since issuing without a reservation bypasses the commitment model.",
+    "keywords": ["issue error", "reserved quantity exceeded", "unreserved issue"],
+    "related": ["manufacturing.production-orders.materials-tab"]
+  },
+  {
+    "id": "manufacturing.production-orders.output-tab",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "production-orders",
+    "title": "What happens when I Record Output?",
+    "answer": "Record Output puts finished goods into stock at the order's location. Recording exactly the planned quantity auto-completes the order - no separate \"mark complete\" click is needed. Recording less than planned moves the order to Partially Completed and leaves it open for more output later. Recording more than the plan allows is refused outright.",
+    "keywords": ["record output", "complete order", "finished goods", "overproduce"],
+    "related": ["manufacturing.production-orders.screen"]
+  },
+  {
+    "id": "manufacturing.production-orders.status-automatic",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "production-orders",
+    "title": "Does a production order's status ever change automatically?",
+    "answer": "Only at two points: releasing (which also permanently locks the BOM version this order uses) and recording output that meets the full plan (which completes the order). Every other transition - plan, start, hold, cancel, close short - is a deliberate button click, and the server enforces which transitions are legal from where, not just the screen.",
+    "keywords": ["status transition", "state machine", "automatic status"],
+    "related": ["manufacturing.production-orders.screen"]
+  },
+  {
+    "id": "manufacturing.production-orders.quality-tab",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "production-orders",
+    "title": "How does raising rework from a failed quality check work?",
+    "answer": "A quality check records a pass/partial/fail result against a checked quantity, with a failed-quantity breakdown and optional defect categories - a partial result (some good, some not) is the expected everyday case. Raise Rework is available directly from a failed check and opens corrective work against the same order rather than spawning a new one, so output is never double-counted and the fault stays traceable to the run that caused it.",
+    "keywords": ["quality check", "rework", "failed check", "defect"],
+    "related": ["manufacturing.production-orders.screen"]
+  },
+  {
+    "id": "manufacturing.production-orders.wastage-tab",
+    "type": "feature",
+    "module": "manufacturing",
+    "screen": "production-orders",
+    "title": "What is the Wastage tab for?",
+    "answer": "Records material that was issued and will never become product, as a separate reasoned entry (with a category like cutting loss, damage, or shrinkage) rather than material simply vanishing from the consumption math. Shows a running wastage cost for the order.",
+    "keywords": ["wastage", "material loss", "cutting loss"],
+    "related": ["manufacturing.production-orders.materials-tab"]
+  },
+  {
+    "id": "manufacturing.production-orders.cost-tab",
+    "type": "report",
+    "module": "manufacturing",
+    "screen": "production-orders",
+    "title": "What does the Cost tab show?",
+    "answer": "Estimated cost (from the BOM plus labour rates) versus actual cost (from real issues, consumption, and completed work orders), with material lines and labour lines shown separately - so a variance is traceable to whether it came from materials or from labour.",
+    "keywords": ["cost tab", "estimated vs actual", "variance"],
+    "related": ["manufacturing.production-orders.screen"]
+  },
+  {
+    "id": "manufacturing.production-orders.no-bom-error",
+    "type": "troubleshooting",
+    "module": "manufacturing",
+    "screen": "production-orders",
+    "title": "\"This item has no bill of materials\" when creating a production order",
+    "answer": "The item needs a BOM with at least one active version - a BOM sitting in Draft doesn't count. Open Bills of Materials, finish the recipe, and Activate it.",
+    "keywords": ["no bom", "cannot create production order"],
+    "related": ["manufacturing.boms.activate"]
+  },
+  {
+    "id": "manufacturing.production-orders.reserve-capped",
+    "type": "troubleshooting",
+    "module": "manufacturing",
+    "screen": "production-orders",
+    "title": "Can't reserve the full quantity a production order needs",
+    "answer": "Reservation is capped by what's actually available (on hand minus what other orders have already reserved) at that location. Check Material Planning (MRP) - if the material shows a shortage there, that's the same number blocking this reservation.",
+    "keywords": ["reserve limited", "not enough material"],
+    "related": ["manufacturing.mrp.screen"]
+  },
+  {
+    "id": "manufacturing.production-orders.output-exceeds-plan",
+    "type": "troubleshooting",
+    "module": "manufacturing",
+    "screen": "production-orders",
+    "title": "Recording output says the quantity exceeds the plan",
+    "answer": "Produced plus already-cancelled quantity can never exceed what was planned. If the batch genuinely made more than planned, that additional quantity needs its own new production order - it isn't recorded as extra output on this one.",
+    "keywords": ["output exceeds plan", "overproduce error"],
+    "related": ["manufacturing.production-orders.output-tab"]
+  },
+
+  {
+    "id": "manufacturing.tailors.screen",
+    "type": "screen",
+    "module": "manufacturing",
+    "screen": "tailors",
+    "route": "/tailors",
+    "title": "Tailors",
+    "answer": "Tailors manages the roster of tailor resources: pay model, rate, skills, and current workload. Requires manager role or above. This is a different, real workforce resource unconnected to the CRM & Marketing module's Alterations screen, which uses a tailor's name as free text.",
+    "keywords": ["tailors", "roster", "pay model"],
+    "related": ["manufacturing.tailors.pay-model-frozen", "crm-marketing.alterations.not-connected-to-tailors"]
+  },
+  {
+    "id": "manufacturing.tailors.pay-model-frozen",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "tailors",
+    "title": "If I change a tailor's rate, does it change the cost of past work?",
+    "answer": "No. A tailor's pay model and rate are copied onto each work order at the moment that tailor is assigned to it. Changing the rate afterward never rewrites the cost of work already assigned - only new assignments pick up the new rate.",
+    "keywords": ["pay rate change", "labour cost", "frozen rate"],
+    "related": ["manufacturing.tailors.screen", "manufacturing.production-orders.cost-tab"]
+  },
+  {
+    "id": "manufacturing.tailors.not-a-location",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "tailors",
+    "title": "Does material get tracked as being \"at\" a tailor?",
+    "answer": "No. A tailor is a resource, not a stock location - material issued to a production order goes to the order's own location, never to a per-tailor bucket. There is nothing to transfer back from a tailor when a job is cancelled.",
+    "keywords": ["tailor location", "material custody"],
+    "related": ["manufacturing.tailors.screen"]
+  },
+  {
+    "id": "manufacturing.work-orders.screen",
+    "type": "screen",
+    "module": "manufacturing",
+    "screen": "work-orders",
+    "route": "/work-orders",
+    "title": "Work Orders",
+    "answer": "Work Orders lists every stage-level job across every production order, floor-wide, with inline tailor assignment. Requires manager role or above. Each job moves through assigned, in progress, paused, and completed - or sent to rework from a failed quality check - enforced server-side.",
+    "keywords": ["work order", "floor view", "assign tailor"],
+    "related": ["manufacturing.my-work.screen"]
+  },
+  {
+    "id": "manufacturing.my-work.screen",
+    "type": "screen",
+    "module": "manufacturing",
+    "screen": "my-work",
+    "route": "/my-work",
+    "title": "My Work",
+    "answer": "My Work is a tailor's own queue of assigned work orders, scoped server-side to their own tailor record only - never by a client-supplied id. Available to any authenticated user, but only meaningful for the Tailor role. Note: as of this documentation pass, the Tailor role cannot be assigned to a user through the Users screen's role dropdown - see the known issue about that gap.",
+    "keywords": ["my work", "tailor queue", "self service"],
+    "related": ["manufacturing.work-orders.screen", "workforce-admin.known-issue.tailor-role-missing"]
+  },
+
+  {
+    "id": "manufacturing.mrp.screen",
+    "type": "screen",
+    "module": "manufacturing",
+    "screen": "mrp",
+    "route": "/mrp",
+    "title": "Material Planning (MRP)",
+    "answer": "MRP computes, fresh on every page load, which materials are short across every released or in-progress production order: required, on hand, reserved, available, shortage, and a suggested purchase quantity grouped by preferred vendor. Requires manager role or above. It holds no data of its own - everything is calculated live.",
+    "keywords": ["mrp", "material requirement planning", "shortage"],
+    "related": ["manufacturing.mrp.demand-calculation", "manufacturing.mrp.generate-draft-po"]
+  },
+  {
+    "id": "manufacturing.mrp.demand-calculation",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "mrp",
+    "title": "How does MRP calculate how much of a material is needed?",
+    "answer": "Demand is the outstanding portion only - planned minus already-issued - across every released, in-progress, or partially-completed order. Material already pulled to the production floor stops counting as something to buy. Supply is on-hand minus reserved, the same formula used everywhere else stock is checked.",
+    "keywords": ["mrp demand", "outstanding requirement", "shortage calculation"],
+    "related": ["manufacturing.mrp.screen"]
+  },
+  {
+    "id": "manufacturing.mrp.generate-draft-po",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "mrp",
+    "title": "Does Generate Draft Purchase Order send anything to a vendor?",
+    "answer": "No. It only ever creates draft purchase orders - nothing is sent to a vendor or committed automatically. It refuses outright, per item, if that item has no preferred vendor set, rather than guessing one. Set a preferred vendor on the item in Item Master first if a row won't let you generate against it.",
+    "keywords": ["generate draft po", "no preferred vendor error"],
+    "related": ["manufacturing.mrp.screen", "core-retail.item-master.preferred-vendor"]
+  },
+
+  {
+    "id": "manufacturing.customer-orders.screen",
+    "type": "screen",
+    "module": "manufacturing",
+    "screen": "customer-orders",
+    "route": "/customer-orders",
+    "title": "Customer Orders (made-to-order)",
+    "answer": "Customer Orders handles made-to-order intake, mixing ready-stock and made-to-order lines on one order. Counter staff can take and deliver orders; confirming and cancelling need manager role or above. This is the single most cleanly built module found across the whole application - every route uses fine-grained permissions and the documented behavior matched the code exactly on every point checked.",
+    "keywords": ["customer order", "made to order", "ready stock"],
+    "related": ["manufacturing.customer-orders.confirm", "manufacturing.customer-orders.mark-ready", "manufacturing.customer-orders.deliver"]
+  },
+  {
+    "id": "manufacturing.customer-orders.confirm",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "customer-orders",
+    "title": "What does Confirm do on a customer order?",
+    "answer": "Confirm is the only action that creates production orders, one per made-to-order line, and it creates them as Draft - confirming a customer's order is a commercial decision, releasing material for it is a separate production one. It refuses if any made-to-order line's item has no active BOM.",
+    "keywords": ["confirm order", "spawn production order"],
+    "related": ["manufacturing.customer-orders.screen", "manufacturing.boms.activate"]
+  },
+  {
+    "id": "manufacturing.customer-orders.mark-ready",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "customer-orders",
+    "title": "Why won't Mark Ready let me proceed?",
+    "answer": "Mark Ready is blocked until every line genuinely is ready: every made-to-order line's production has produced enough, and every ready-stock line has enough physical stock at this order's own outlet specifically. Stock sitting at a different outlet does not count here - there is no cross-outlet suggestion, only a note on which line is still short.",
+    "keywords": ["mark ready blocked", "readiness", "not ready"],
+    "related": ["manufacturing.customer-orders.screen"]
+  },
+  {
+    "id": "manufacturing.customer-orders.deliver",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "customer-orders",
+    "title": "What happens when a customer order is delivered?",
+    "answer": "Deliver settles the order as a real sale, using the exact same checkout path POS itself uses. The advance already taken is applied as a discount against the final sale total. Because it is an ordinary sale under the hood, any active storewide automatic discount rule still applies to the balance collected at handover - there is no way to exempt a negotiated made-to-order price from a promotion.",
+    "keywords": ["deliver order", "settle as sale", "advance payment"],
+    "related": ["manufacturing.customer-orders.screen", "core-retail.discounts.automatic-vs-code"]
+  },
+  {
+    "id": "manufacturing.customer-orders.cancel",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "customer-orders",
+    "title": "What happens to material reservations if a customer order is cancelled?",
+    "answer": "Cancel cancels every production order this customer order spawned that hasn't already finished, which correctly releases their material reservations back to general stock.",
+    "keywords": ["cancel customer order", "release reservation"],
+    "related": ["manufacturing.customer-orders.screen"]
+  },
+
+  {
+    "id": "manufacturing.ai-import.screen",
+    "type": "screen",
+    "module": "manufacturing",
+    "screen": "ai-import",
+    "route": "/ai-import",
+    "title": "AI Invoice Import",
+    "answer": "AI Invoice Import lets a manager upload a photo of a vendor invoice; a vision model proposes line items with confidence scores; a human reviews and approves into a draft goods receipt. Requires an OpenAI API key configured under Settings > Hardware & AI - without one, upload is refused with a message pointing there.",
+    "keywords": ["ai import", "invoice upload", "openai"],
+    "related": ["manufacturing.ai-import.two-checkpoints", "manufacturing.ai-import.approve"]
+  },
+  {
+    "id": "manufacturing.ai-import.two-checkpoints",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "ai-import",
+    "title": "Does the AI ever write directly to stock or the catalog?",
+    "answer": "No, by design. Two human checkpoints exist: a person reviews what the model read off the invoice before approval, and a separate, later action (posting the resulting goods receipt) is what actually commits it to stock. Uploading only fills a review screen - nothing in the catalog or stock changes until Approve, and even then, only a draft receipt is created, not a posted one.",
+    "keywords": ["ai writes to stock", "human review", "two checkpoints"],
+    "related": ["manufacturing.ai-import.screen", "core-retail.goods-receipts.post"]
+  },
+  {
+    "id": "manufacturing.ai-import.approve",
+    "type": "business_rule",
+    "module": "manufacturing",
+    "screen": "ai-import",
+    "title": "What do I need before I can approve an AI import batch?",
+    "answer": "Every included line needs three things: either a matched existing item or a new-item SKU (for a genuinely new material), a real unit of measure (shown as a red selector if the model's guess didn't match anything), and a quantity greater than zero. A line you can't resolve should be excluded rather than blocking the whole batch.",
+    "keywords": ["approve batch", "cannot approve", "missing unit"],
+    "related": ["manufacturing.ai-import.screen"]
+  },
+
+  {
+    "id": "manufacturing.workflow.raw-to-garment",
+    "type": "workflow",
+    "module": "manufacturing",
+    "title": "End-to-end workflow: raw material to finished garment",
+    "answer": "1) A finished item needs an active BOM version. 2) Creating a production order snapshots that BOM's requirements at that moment - later BOM edits never retroactively change an order already in flight. 3) Plan, then Release - releasing locks the BOM version this order used, permanently. 4) On the Materials tab: Reserve, then Issue, for each material line. 5) Start the order once work is underway; assign a tailor to each stage's Work Order. 6) As work finishes: record a quality check, record wastage if any material was lost, and Record Output on the Output tab - the step that actually creates sellable stock. 7) Reaching the full planned quantity closes the order automatically; stopping short needs an explicit close-short with a reason.",
+    "keywords": ["manufacturing workflow", "raw material to garment", "end to end production"],
+    "related": ["manufacturing.production-orders.screen", "manufacturing.boms.screen"]
+  }
+]

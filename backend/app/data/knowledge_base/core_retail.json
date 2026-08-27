@@ -1,0 +1,393 @@
+[
+  {
+    "id": "core-retail.item-master.screen",
+    "type": "screen",
+    "module": "core-retail",
+    "screen": "item-master",
+    "route": "/items",
+    "title": "Item Master",
+    "answer": "Item Master is the superset catalog covering every kind of stocked or purchasable thing - raw materials, packaging, services, and finished garments - distinguished by a Type field. It belongs to the Catalog nav group and is used by inventory/purchasing staff. A related but different screen, Products, covers only finished garments with size/color variant management and barcode-label printing layered on top. If you're setting up a raw material, packaging, or a non-stocked service, Item Master is the only screen that works; if you're managing sizes/colors or printing barcode labels for a garment, use Products instead.",
+    "keywords": ["item master", "catalog", "item type", "raw material", "sku", "products vs items"],
+    "related": ["core-retail.item-master.sku-immutable", "core-retail.item-master.preferred-vendor", "core-retail.faq.item-vs-product"]
+  },
+  {
+    "id": "core-retail.item-master.sku-immutable",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "item-master",
+    "title": "Why can't I change an item's SKU?",
+    "answer": "An item's SKU can only be set when it is first created. Once a sale, stock movement, or purchase order references that item, its SKU is permanently fixed - renaming it after the fact would break every historical document that cites it. If a catalog needs renumbering, create a new item rather than editing the old SKU.",
+    "keywords": ["sku", "edit", "rename", "immutable", "locked"],
+    "related": ["core-retail.item-master.screen"]
+  },
+  {
+    "id": "core-retail.item-master.type-flags",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "item-master",
+    "title": "What does an item's Type actually control?",
+    "answer": "An item's Type (Raw Material / Semi-Finished / Finished Product / Packaging / Service) sets default values for two independent flags: whether it can be sold at POS (is_sellable) and whether it can be ordered from a vendor (is_purchasable). These defaults are editable per item, so a raw material could in principle be marked sellable, but that isn't the normal setup.",
+    "keywords": ["item type", "sellable", "purchasable", "raw material", "finished product"],
+    "related": ["core-retail.item-master.screen"]
+  },
+  {
+    "id": "core-retail.item-master.preferred-vendor",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "item-master",
+    "title": "What does marking a vendor \"preferred\" for an item do?",
+    "answer": "Exactly one vendor can be preferred per item at a time - marking a new one automatically un-marks whichever vendor held that flag before. The preferred vendor is what Reorder Suggestions (Purchase Orders) and Material Requirement Planning (Manufacturing) both use as the unambiguous default when proposing what to buy.",
+    "keywords": ["preferred vendor", "vendor item", "reorder", "mrp"],
+    "related": ["core-retail.purchase-orders.reorder-suggestions", "manufacturing.mrp.screen"]
+  },
+  {
+    "id": "core-retail.item-master.uom-conversions",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "item-master",
+    "title": "How do vendor units (like rolls) become stock units (like metres)?",
+    "answer": "Two independent kinds of unit conversion exist. Standard conversions (set on the Units of Measure screen) apply within one category, e.g. 1 m = 100 cm - this is physics, not a business decision. Item-specific conversions (set per item, on an item's own Conversions tab) are packaging rules like \"1 roll of this lace = 25 m\", and can deliberately cross categories and even differ by vendor (one supplier's roll may be 25 m, another's 50 m). When a goods receipt is posted, the item-specific rule for that vendor is used if one exists, otherwise the item-generic rule, otherwise the standard category conversion.",
+    "keywords": ["uom", "unit conversion", "roll", "packaging", "vendor unit"],
+    "related": ["manufacturing.units-of-measure.screen", "core-retail.goods-receipts.screen"]
+  },
+
+  {
+    "id": "core-retail.inventory.screen",
+    "type": "screen",
+    "module": "core-retail",
+    "screen": "inventory",
+    "route": "/inventory",
+    "title": "Inventory",
+    "answer": "Inventory shows one row per (item, outlet) combination that is actually holding stock: quantity, reorder level, and an Adjust action. Every quantity shown here is a cached total, not the source of truth - the source of truth is a permanent, append-only stock movement ledger that every other module (POS, Transfers, Purchasing, Manufacturing) writes to. If a number here ever looks wrong, the item's movement history is what to check first.",
+    "keywords": ["inventory", "stock level", "on hand", "reorder level"],
+    "related": ["core-retail.inventory.adjust", "core-retail.inventory.ledger-is-truth"]
+  },
+  {
+    "id": "core-retail.inventory.adjust",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "inventory",
+    "title": "What does Adjust do on the Inventory screen?",
+    "answer": "Adjust sets a new quantity for one (item, outlet) pair directly, writing a real, permanent ADJUSTMENT-type entry to the stock ledger. It is not a silent overwrite - it appears in that item's movement history exactly like a sale or a receipt would.",
+    "keywords": ["adjust", "manual adjustment", "correction", "stock count"],
+    "related": ["core-retail.inventory.screen"]
+  },
+  {
+    "id": "core-retail.inventory.no-permission-gate",
+    "type": "known_issue",
+    "module": "core-retail",
+    "screen": "inventory",
+    "severity": "defect",
+    "fixed": false,
+    "title": "Manual stock adjustment has no role restriction",
+    "answer": "The Adjust action on the Inventory screen has no permission or role check beyond being logged in - any authenticated user, including outlet-level staff, can change a stock count. If a store expects this to be a manager-only action, the application does not currently enforce that.",
+    "keywords": ["adjust", "permission", "role", "defect"],
+    "related": ["core-retail.inventory.adjust"]
+  },
+  {
+    "id": "core-retail.inventory.ledger-is-truth",
+    "type": "cross_module",
+    "module": "core-retail",
+    "title": "How does stock actually move in this system?",
+    "answer": "Every module that changes stock - POS checkout, Returns, Stock Transfers, Purchase Orders' receiving action, Goods Receipts, and every Manufacturing material/output action - writes through one single choke point into one append-only ledger. The Inventory screen's quantities are a cached, derived total from that ledger, never an independent source. This is why the ledger, not the displayed quantity, is authoritative when investigating a discrepancy.",
+    "keywords": ["ledger", "stock movement", "architecture", "source of truth"],
+    "related": ["core-retail.inventory.screen"]
+  },
+
+  {
+    "id": "core-retail.purchase-orders.screen",
+    "type": "screen",
+    "module": "core-retail",
+    "screen": "purchase-orders",
+    "route": "/purchase-orders",
+    "title": "Purchase Orders",
+    "answer": "Purchase Orders manages the buying document sent to a vendor: draft, sent, confirmed, partially received, received, or cancelled. It belongs to Procurement and requires manager role or above. It is closely tied to Goods Receipts, which is the recommended way to actually record delivery - see the known issue about the PO detail page's own Receive button before using it.",
+    "keywords": ["purchase order", "po", "vendor", "procurement"],
+    "related": ["core-retail.purchase-orders.reorder-suggestions", "core-retail.known-issue.duplicate-receiving", "core-retail.goods-receipts.screen"]
+  },
+  {
+    "id": "core-retail.purchase-orders.reorder-suggestions",
+    "type": "feature",
+    "module": "core-retail",
+    "screen": "purchase-orders",
+    "title": "What are Reorder Suggestions?",
+    "answer": "A banner on the Purchase Orders screen lists every item at or below its reorder level, grouped by that item's preferred vendor, with a suggested order quantity (roughly double the reorder level, adjusted for what's already on hand). It is a starting point for creating a new PO, not an automatic order - nothing is created until you act on a suggestion.",
+    "keywords": ["reorder", "suggestion", "low stock", "restock"],
+    "related": ["core-retail.item-master.preferred-vendor", "core-retail.workflow.restock"]
+  },
+  {
+    "id": "core-retail.purchase-orders.status-automatic",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "purchase-orders",
+    "title": "Can I set a purchase order's status directly?",
+    "answer": "A PO's status only ever advances automatically as lines are received - it is never set directly to Partially Received or Received. Sent and Confirmed are the two manual states a buyer sets themselves before anything has arrived.",
+    "keywords": ["po status", "received", "confirmed", "sent"],
+    "related": ["core-retail.purchase-orders.screen"]
+  },
+  {
+    "id": "core-retail.known-issue.duplicate-receiving",
+    "type": "known_issue",
+    "module": "core-retail",
+    "screen": "purchase-orders",
+    "severity": "defect",
+    "fixed": false,
+    "title": "Two different actions can both mark a purchase order as received - use Goods Receipts",
+    "answer": "There are two separate ways to receive a purchase order into stock, and they behave differently. The Receive button on the PO's own detail page moves stock directly and updates the PO's received quantity, but creates no Goods Receipt document, does not recalculate the item's average cost, and leaves no audit trail in the Goods Receipts screen. The Goods Receipts module does all of that. Recommendation: always receive purchase orders through Goods Receipts, not the button on the PO detail page, until this is reconciled at the product level.",
+    "keywords": ["receive", "goods receipt", "duplicate", "two paths", "po receive button"],
+    "related": ["core-retail.purchase-orders.screen", "core-retail.goods-receipts.post"]
+  },
+
+  {
+    "id": "core-retail.goods-receipts.screen",
+    "type": "screen",
+    "module": "core-retail",
+    "screen": "goods-receipts",
+    "route": "/goods-receipts",
+    "title": "Goods Receipts",
+    "answer": "Goods Receipts is the recommended way to record a delivery from a vendor. A receipt starts as a Draft (nothing moves yet), can be linked to a purchase order or stand alone, and is committed with Post - the one moment stock actually moves, cost recalculates, and (if linked) the source PO's status advances. It belongs to Procurement and requires the goods_receipts.create/.post permissions.",
+    "keywords": ["goods receipt", "receiving", "post", "draft"],
+    "related": ["core-retail.goods-receipts.post", "core-retail.known-issue.duplicate-receiving"]
+  },
+  {
+    "id": "core-retail.goods-receipts.post",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "goods-receipts",
+    "title": "What exactly happens when I Post a goods receipt?",
+    "answer": "Posting is the only moment stock actually moves for a goods receipt. It recomputes each received item's weighted-average cost from what was on hand plus what just arrived, writes one ledger entry per line, and - if the receipt is linked to a purchase order - automatically advances that PO's received quantity and status. A posted receipt is permanent: it cannot be edited or unposted. If goods need to go back afterward, record a Purchase Return instead.",
+    "keywords": ["post", "weighted average cost", "cannot edit", "permanent"],
+    "related": ["core-retail.goods-receipts.screen", "core-retail.goods-receipts.cancel-vs-return"]
+  },
+  {
+    "id": "core-retail.goods-receipts.cancel-vs-return",
+    "type": "faq",
+    "module": "core-retail",
+    "screen": "goods-receipts",
+    "title": "Why can't I cancel a posted goods receipt?",
+    "answer": "Cancel is only available on a receipt still in Draft status. Once posted, stock has already physically moved and the cost recalculation has already happened - cancelling would require reversing both silently. Instead, record a Purchase Return, which creates its own audited, immediate entry for goods going back to the vendor.",
+    "keywords": ["cancel", "posted receipt", "purchase return", "why can't I"],
+    "related": ["core-retail.goods-receipts.post"]
+  },
+  {
+    "id": "core-retail.goods-receipts.po-status-confirmed",
+    "type": "cross_module",
+    "module": "core-retail",
+    "title": "Does posting a goods receipt update the linked purchase order?",
+    "answer": "Yes, confirmed directly in the code: posting a receipt linked to a PO correctly advances that PO's received quantity and status (Partially Received or Received, depending on completeness). This is consistent - it is specifically the older Receive button on the PO detail page (see the known duplicate-receiving issue) that bypasses this and leaves the PO's paper trail incomplete.",
+    "keywords": ["po status", "quantity received", "linked receipt"],
+    "related": ["core-retail.goods-receipts.post", "core-retail.known-issue.duplicate-receiving"]
+  },
+
+  {
+    "id": "core-retail.transfers.screen",
+    "type": "screen",
+    "module": "core-retail",
+    "screen": "transfers",
+    "route": "/transfers",
+    "title": "Stock Transfers",
+    "answer": "Stock Transfers moves inventory between two outlets: Requested, then Dispatched, then Received (or Cancelled, only while still Requested). It requires manager role or above. This is the one module in Core Retail with a single, unambiguous workflow and no duplicate receiving paths.",
+    "keywords": ["transfer", "outlet to outlet", "dispatch", "receive"],
+    "related": ["core-retail.transfers.dispatch-check", "core-retail.transfers.partial"]
+  },
+  {
+    "id": "core-retail.transfers.dispatch-check",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "transfers",
+    "title": "Can I dispatch more than the source outlet has?",
+    "answer": "No. Dispatch checks the source outlet's actual on-hand stock before allowing it, and stock leaves the source outlet immediately on dispatch - before the destination confirms receipt.",
+    "keywords": ["dispatch", "insufficient stock", "source outlet"],
+    "related": ["core-retail.transfers.screen"]
+  },
+  {
+    "id": "core-retail.transfers.partial",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "transfers",
+    "title": "Can a transfer be received in parts?",
+    "answer": "Yes. Receiving less than was dispatched (a partial receipt) is supported - the transfer only auto-closes to Received once every line is fully accounted for.",
+    "keywords": ["partial receipt", "transfer status"],
+    "related": ["core-retail.transfers.screen"]
+  },
+
+  {
+    "id": "core-retail.pos.screen",
+    "type": "screen",
+    "module": "core-retail",
+    "screen": "pos",
+    "route": "/pos",
+    "title": "Point of Sale",
+    "answer": "POS is the checkout screen: search or scan an item into the cart, optionally attach a customer, apply a coupon or let an automatic discount apply itself, choose payment mode, and Complete Sale. Any authenticated user can use it - cashier-level access is deliberate throughout this screen, not a gap.",
+    "keywords": ["pos", "checkout", "cashier", "point of sale"],
+    "related": ["core-retail.pos.complete-sale", "core-retail.pos.customer-required-for-redemption"]
+  },
+  {
+    "id": "core-retail.pos.customer-required-for-redemption",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "pos",
+    "title": "Why won't store credit or loyalty points apply at checkout?",
+    "answer": "Redeeming store credit or loyalty points requires a customer attached to the cart - both are checked against that specific customer's actual balance and cannot exceed it. Confirm a customer is selected first.",
+    "keywords": ["store credit", "loyalty points", "redeem", "no customer"],
+    "related": ["crm-marketing.customers.credit-balance"]
+  },
+  {
+    "id": "core-retail.pos.complete-sale",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "pos",
+    "title": "What happens when I click Complete Sale?",
+    "answer": "Complete Sale writes the sale, deducts stock with a fresh, lock-protected re-check of what is actually on hand (so two cashiers cannot both sell the last unit), earns loyalty points (1 point per Rs.100 spent, doubled for VIP customers), and offers the receipt for printing or sending.",
+    "keywords": ["complete sale", "checkout", "loyalty earn", "stock lock"],
+    "related": ["core-retail.pos.screen"]
+  },
+  {
+    "id": "core-retail.pos.insufficient-stock-different-outlet",
+    "type": "troubleshooting",
+    "module": "core-retail",
+    "screen": "pos",
+    "title": "\"Insufficient stock\" at checkout, but Inventory shows stock is fine",
+    "answer": "Check whether stock is fine at this specific outlet - the Inventory screen's number is per (item, outlet), and stock at a different outlet does not count here. Also check for open Stock Transfers dispatched from this outlet: dispatched stock has already left, even before the destination confirms receipt.",
+    "keywords": ["insufficient stock", "checkout error", "wrong outlet"],
+    "related": ["core-retail.transfers.dispatch-check"]
+  },
+
+  {
+    "id": "core-retail.returns.screen",
+    "type": "screen",
+    "module": "core-retail",
+    "screen": "returns",
+    "route": "/returns",
+    "title": "Returns & Exchanges",
+    "answer": "Returns & Exchanges processes a return and/or exchange against a prior sale in a single transaction. It requires the original sale to exist and is open to any authenticated user.",
+    "keywords": ["return", "exchange", "refund"],
+    "related": ["core-retail.returns.restock-toggle", "core-retail.returns.double-return-prevention"]
+  },
+  {
+    "id": "core-retail.returns.restock-toggle",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "returns",
+    "title": "What does the Restock toggle on a return line do?",
+    "answer": "On means the returned item goes back into sellable stock. Off means the item is recorded as returned but excluded from stock - use this for damaged or unsellable goods so the on-hand count stays honest. Exchange items always deduct stock regardless of the original item's restock setting.",
+    "keywords": ["restock", "damaged", "unsellable"],
+    "related": ["core-retail.returns.screen"]
+  },
+  {
+    "id": "core-retail.returns.double-return-prevention",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "returns",
+    "title": "Can the same sale line be returned twice?",
+    "answer": "No - confirmed directly in the code. Everything already returned against that sale line, across every prior return transaction, is summed before allowing more, even across separate return transactions weeks apart.",
+    "keywords": ["double return", "already returned"],
+    "related": ["core-retail.returns.screen"]
+  },
+  {
+    "id": "core-retail.returns.refund-mode-required",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "returns",
+    "title": "Why does a return need a payment or refund mode?",
+    "answer": "If the exchange is worth more than the return, a payment mode is required to record how the difference was collected. If less, a refund mode is required. A store-credit refund additionally requires a customer on the original sale - there is no anonymous store-credit refund.",
+    "keywords": ["refund mode", "payment mode", "difference", "store credit refund"],
+    "related": ["core-retail.returns.screen"]
+  },
+
+  {
+    "id": "core-retail.discounts.screen",
+    "type": "screen",
+    "module": "core-retail",
+    "screen": "discounts",
+    "route": "/discounts",
+    "title": "Discounts & Coupons",
+    "answer": "Discounts & Coupons configures percentage, flat, or BOGO rules, scoped to all items, a category, a brand, or a specific product, optionally VIP-only, with date windows and usage limits. Managing rules requires manager role or above; rules apply automatically or by code at POS for any authenticated user.",
+    "keywords": ["discount", "coupon", "bogo", "vip only"],
+    "related": ["core-retail.discounts.automatic-vs-code", "core-retail.discounts.bogo-cheapest"]
+  },
+  {
+    "id": "core-retail.discounts.automatic-vs-code",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "discounts",
+    "title": "What's the difference between a blank code and a set code on a discount rule?",
+    "answer": "A blank code means the rule is evaluated automatically against every cart with no customer action needed. A set code means the rule only ever applies when a cashier types it in at checkout. There is no hybrid \"automatic but with a code\" mode.",
+    "keywords": ["coupon code", "automatic discount", "blank code"],
+    "related": ["core-retail.discounts.screen"]
+  },
+  {
+    "id": "core-retail.discounts.bogo-cheapest",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "discounts",
+    "title": "In a Buy-X-Get-Y (BOGO) discount, which units are free?",
+    "answer": "The cheapest matching units are made free, not the most expensive ones. This is a specific, non-obvious rule worth knowing when setting expected margin on a BOGO promotion. BOGO is also a whole-unit promotion - fractional quantities (like 2.5 m of fabric) are floored, not prorated.",
+    "keywords": ["bogo", "buy one get one", "cheapest unit", "free item"],
+    "related": ["core-retail.discounts.screen"]
+  },
+  {
+    "id": "core-retail.discounts.no-stacking",
+    "type": "business_rule",
+    "module": "core-retail",
+    "screen": "discounts",
+    "title": "Do multiple discount rules stack on the same cart?",
+    "answer": "No. When several automatic rules could all apply, only the single rule producing the largest discount is used - rules never stack.",
+    "keywords": ["stacking", "multiple discounts", "best discount"],
+    "related": ["core-retail.discounts.screen"]
+  },
+  {
+    "id": "core-retail.known-issue.coupon-race",
+    "type": "known_issue",
+    "module": "core-retail",
+    "screen": "discounts",
+    "severity": "defect",
+    "fixed": false,
+    "title": "A coupon's usage limit isn't perfectly airtight under concurrent checkouts",
+    "answer": "Usage limit is checked and counted without a database lock, unlike stock quantities. Two checkouts completing at nearly the same moment, both using a coupon one redemption away from its limit, could theoretically both succeed. Not guaranteed airtight under real concurrency, only under normal single-cashier timing.",
+    "keywords": ["usage limit", "concurrency", "race condition", "coupon limit"],
+    "related": ["core-retail.discounts.screen"]
+  },
+  {
+    "id": "core-retail.discounts.troubleshoot-not-applying",
+    "type": "troubleshooting",
+    "module": "core-retail",
+    "screen": "discounts",
+    "title": "A discount code says it doesn't apply, but looks active and in date",
+    "answer": "Check, in order: is there a customer on the cart if the rule is VIP-only or the code needs one; does the cart's subtotal meet the rule's minimum purchase amount; has the rule's usage limit already been reached; does the rule's scope (category/brand/specific product) actually match anything currently in the cart.",
+    "keywords": ["discount not working", "coupon rejected"],
+    "related": ["core-retail.discounts.screen"]
+  },
+
+  {
+    "id": "core-retail.faq.item-vs-product",
+    "type": "faq",
+    "module": "core-retail",
+    "title": "Should I use Item Master or Products to add a new item?",
+    "answer": "Use Products if it's a finished garment where you need to manage size/color variants or print barcode labels. Use Item Master for anything else - raw materials, packaging, or a non-stocked service - or if you don't need variant/label features for a garment either. Both screens manage overlapping data by design, not by accident.",
+    "keywords": ["item master vs products", "which screen", "add new item"],
+    "related": ["core-retail.item-master.screen"]
+  },
+  {
+    "id": "core-retail.workflow.restock",
+    "type": "workflow",
+    "module": "core-retail",
+    "title": "End-to-end workflow: restocking a low item",
+    "answer": "1) An item's row turns amber in Item Master or Inventory once quantity reaches its reorder level. 2) Purchase Orders' Reorder Suggestions banner picks it up automatically, grouped by preferred vendor. 3) Creating a PO from a suggestion pre-fills quantity and vendor, starting in Draft. 4) Mark it Sent once actually sent to the vendor. 5) When goods arrive, go to Goods Receipts, not the PO detail page's own Receive button, and create a new receipt against this PO. 6) Count what actually arrived, adjust if it differs from the order, save as Draft. 7) Post the receipt - this is the only step that moves stock, updates average cost, and advances the PO.",
+    "keywords": ["restock workflow", "reorder", "receiving workflow", "end to end"],
+    "related": ["core-retail.purchase-orders.reorder-suggestions", "core-retail.goods-receipts.post", "core-retail.known-issue.duplicate-receiving"]
+  },
+
+  {
+    "id": "core-retail.known-issue.dashboard-charts-fixed",
+    "type": "known_issue",
+    "module": "crm-marketing",
+    "screen": "dashboard",
+    "severity": "defect",
+    "fixed": true,
+    "title": "Dashboard sales-trend and payment-mode charts were broken (now fixed)",
+    "answer": "Both charts silently returned a server error for any store with sales in the lookback window, due to a leftover numeric-type mismatch from an earlier data migration. Found and fixed during the ERP documentation project; verified live and covered by the automated test suite as of the fix.",
+    "keywords": ["dashboard chart", "sales trend", "broken chart", "500 error"],
+    "related": []
+  }
+]
