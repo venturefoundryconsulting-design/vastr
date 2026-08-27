@@ -127,20 +127,13 @@ export default function HardwareAiSettings() {
         </Form>
       </Card>
 
-      <Card
-        title={
-          <Space>
-            OpenAI (for AI features)
-            <Tag>for future use</Tag>
-          </Space>
-        }
-      >
+      <Card title="OpenAI (for AI features)">
         <Alert
           type="info"
           showIcon
           style={{ marginBottom: 12 }}
-          message="Not yet connected to a feature"
-          description="None of the AI features on the roadmap (see features.md - sales summaries, restock suggestions, product descriptions, etc) are built yet. This just stores the API key now, so they're ready to wire up when those features are built."
+          message="Used by AI Invoice Import"
+          description="Required before anyone can upload a vendor invoice under Procurement > AI Invoice Import - that's the only feature reading this key today. Further AI features (see features.md) may use it later."
         />
         <Form
           form={aiForm}
