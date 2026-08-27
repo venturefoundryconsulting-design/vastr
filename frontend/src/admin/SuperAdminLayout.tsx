@@ -13,6 +13,7 @@ import { Avatar, Dropdown, Layout as AntLayout, Menu } from "antd";
 import type { ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import HelpWidget from "../components/HelpWidget";
 
 const { Header, Sider, Content } = AntLayout;
 
@@ -104,6 +105,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
         </Header>
         <Content style={{ margin: 20 }}>{children}</Content>
       </AntLayout>
+      <HelpWidget />
     </AntLayout>
   );
 }

@@ -30,6 +30,7 @@ import { getPublicBranding } from "../api/endpoints";
 import { useAuth } from "../context/AuthContext";
 import type { UserRole } from "../api/types";
 import { hasMinRole } from "../utils/roles";
+import HelpWidget from "./HelpWidget";
 
 const { Header, Sider, Content } = AntLayout;
 const { useBreakpoint } = Grid;
@@ -366,6 +367,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           onClose={() => setCustomizeOpen(false)}
         />
       )}
+      <HelpWidget />
     </AntLayout>
   );
 }

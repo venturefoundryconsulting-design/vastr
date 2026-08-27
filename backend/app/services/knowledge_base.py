@@ -33,6 +33,15 @@ _STOPWORDS = {
     "a", "an", "the", "is", "it", "to", "of", "and", "or", "in", "on", "for",
     "do", "does", "can", "how", "what", "why", "when", "where", "who",
     "this", "that", "with", "my", "i", "me", "you", "your", "not", "no",
+    # Generic filler words that show up in ordinary English sentences
+    # (including inside a question-phrased title) without signalling
+    # anything domain-specific - the exact class of word that turned
+    # "what's the weather like today" into a false match against an entry
+    # whose title happens to read "...vendor units (like rolls)...".
+    "like", "just", "really", "actually", "please", "thanks", "today",
+    "now", "get", "gets", "getting", "want", "wants", "need", "needs",
+    "make", "makes", "know", "knows", "there", "here", "some", "any",
+    "will", "would", "should", "could", "did", "was", "were", "be", "been",
 }
 
 
@@ -112,11 +121,20 @@ def search(
     query: str, *, module: str | None = None, screen: str | None = None, limit: int = 8
 ) -> list[tuple[KbEntry, float]]:
     """Plain keyword search, scored and ranked - no embeddings, no external
-    call. A term matching the title or an explicit keyword counts far more
-    than one only appearing in the prose answer, and an entry scoped to the
-    caller's current module/screen gets a boost so contextual help actually
-    feels contextual. Returns (entry, score) pairs, highest score first;
-    ties broken by insertion order, so results are stable across calls.
+    call. Matching a whole, explicit keyword counts far more than matching a
+    word that only happens to appear in the title or prose answer, because
+    keywords are the terms an author deliberately chose to represent an
+    entry - ordinary English words in a question-phrased title are not a
+    reliable signal on their own (a title like "...vendor units (like
+    rolls)..." naturally contains "like" without "like" meaning anything).
+    Keyword matching is exact-word, not substring, for the same reason: a
+    short keyword like "ai" must not match merely because it happens to be
+    a substring of an unrelated query word.
+
+    An entry scoped to the caller's current module/screen gets a boost so
+    contextual help actually feels contextual. Returns (entry, score) pairs,
+    highest score first; ties broken by insertion order, so results are
+    stable across calls.
     """
     query_terms = _tokenize(query)
     if not query_terms:
@@ -125,17 +143,19 @@ def search(
     scored: list[tuple[KbEntry, float]] = []
     for entry in load_entries():
         title_terms = _tokenize(entry.title)
-        keyword_terms = {kw.lower() for kw in entry.keywords}
+        keyword_terms: set[str] = set()
+        for kw in entry.keywords:
+            keyword_terms |= _tokenize(kw)
         answer_terms = _tokenize(entry.answer)
 
         score = 0.0
         for term in query_terms:
+            if term in keyword_terms:
+                score += 4.0
             if term in title_terms:
-                score += 3.0
-            if any(term in kw or kw in term for kw in keyword_terms):
-                score += 3.0
+                score += 1.5
             if term in answer_terms:
-                score += 1.0
+                score += 0.5
 
         if score <= 0:
             continue
