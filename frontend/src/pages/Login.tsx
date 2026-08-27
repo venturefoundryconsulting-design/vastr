@@ -100,6 +100,11 @@ export default function Login() {
     }
   };
 
+  const demoLogin = (email: string, password: string) => {
+    form.setFieldsValue({ email, password });
+    doLogin(email, password);
+  };
+
   const resend = async () => {
     if (!unverifiedEmail) return;
     setResending(true);
@@ -286,6 +291,37 @@ export default function Login() {
               </Button>
             </Form.Item>
           </Form>
+
+          {/* Local development only - Vite strips this block out of a
+              production build entirely (import.meta.env.DEV is a
+              compile-time constant, not a runtime check), so there is no
+              way for this to end up reachable on a live deployment
+              regardless of environment misconfiguration. Demo credentials
+              were deliberately removed from the login page before the
+              go-live launch (see project history) - this does not reverse
+              that, it only speeds up local testing during development. */}
+          {import.meta.env.DEV && (
+            <div style={{ marginBottom: 20, paddingTop: 16, borderTop: "1px dashed #ddd" }}>
+              <Typography.Text
+                type="secondary"
+                style={{ display: "block", textAlign: "center", fontSize: 11, marginBottom: 8, letterSpacing: 0.4 }}
+              >
+                LOCAL DEV ONLY — QUICK LOGIN
+              </Typography.Text>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Button size="small" block onClick={() => demoLogin("admin@tanisi.demo.com", "admin123")}>
+                  Admin
+                </Button>
+                <Button size="small" block onClick={() => demoLogin("manager@tanisi.demo.com", "manager123")}>
+                  Manager
+                </Button>
+                <Button size="small" block onClick={() => demoLogin("staff@tanisi.demo.com", "staff123")}>
+                  Staff
+                </Button>
+              </div>
+            </div>
+          )}
+
           <Typography.Text type="secondary" style={{ display: "block", textAlign: "center", fontSize: 12 }}>
             New store?{" "}
             <Link to="/signup" style={{ color: BRAND, fontWeight: 600 }}>Sign up free</Link>
