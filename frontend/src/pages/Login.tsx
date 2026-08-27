@@ -292,21 +292,22 @@ export default function Login() {
             </Form.Item>
           </Form>
 
-          {/* Local development only - Vite strips this block out of a
-              production build entirely (import.meta.env.DEV is a
-              compile-time constant, not a runtime check), so there is no
-              way for this to end up reachable on a live deployment
-              regardless of environment misconfiguration. Demo credentials
-              were deliberately removed from the login page before the
-              go-live launch (see project history) - this does not reverse
-              that, it only speeds up local testing during development. */}
-          {import.meta.env.DEV && (
+          {/* Gated by a build-time flag, not left unconditional: demo
+              credentials were deliberately removed from the login page
+              before go-live (see project history), and this doesn't reverse
+              that decision - it's a temporary, explicit exception while
+              production is still under testing. VITE_SHOW_DEMO_LOGIN in
+              frontend/.env.production is what actually controls this on the
+              live site; flip it to a falsy value and rebuild once testing
+              is done, rather than deleting this block. Always on in local
+              dev regardless, since frontend/.env doesn't set the flag. */}
+          {(import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_LOGIN === "true") && (
             <div style={{ marginBottom: 20, paddingTop: 16, borderTop: "1px dashed #ddd" }}>
               <Typography.Text
                 type="secondary"
                 style={{ display: "block", textAlign: "center", fontSize: 11, marginBottom: 8, letterSpacing: 0.4 }}
               >
-                LOCAL DEV ONLY — QUICK LOGIN
+                QUICK LOGIN — FOR TESTING
               </Typography.Text>
               <div style={{ display: "flex", gap: 8 }}>
                 <Button size="small" block onClick={() => demoLogin("admin@tanisi.demo.com", "admin123")}>
