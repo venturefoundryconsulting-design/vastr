@@ -133,7 +133,7 @@ export default function PurchaseOrderDetail() {
               label={`${item.product_name} (${item.sku}) - remaining ${item.quantity_ordered - item.quantity_received}`}
               initialValue={item.quantity_ordered - item.quantity_received}
             >
-              <InputNumber min={0} max={item.quantity_ordered - item.quantity_received} style={{ width: "100%" }} />
+              <InputNumber min={0} step={1} max={item.quantity_ordered - item.quantity_received} style={{ width: "100%" }} />
             </Form.Item>
           ))}
         </Form>

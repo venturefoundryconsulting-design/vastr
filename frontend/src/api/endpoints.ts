@@ -91,6 +91,25 @@ import type {
   Vendor,
   VendorProductLink,
   WhatsAppSendResult,
+  Item,
+  ItemUomConversion,
+  Uom,
+  UomCategory,
+  VendorItem,
+  Bom,
+  BomAvailability,
+  BomCost,
+  BomDetail,
+  BomDuplicateWarning,
+  BomVersion,
+  ProductionAvailability,
+  ProductionHistoryEntry,
+  ProductionOrder,
+  ProductionOrderDetail,
+  ProductionTraceStep,
+  MaterialReservation,
+  MaterialTxn,
+  OrderMaterialSummary,
 } from "./types";
 
 // ---- Auth ----
@@ -481,3 +500,143 @@ export const verifyBillingPayment = (data: VerifyPaymentRequest) =>
 // ---- Tenant self-service (the tenant's own users, not Super Admin) ----
 export const getMyTenant = () => apiClient.get<TenantSelf>("/api/tenant/me");
 export const updateMyTenant = (data: TenantSelfUpdate) => apiClient.patch<TenantSelf>("/api/tenant/me", data);
+
+// ---- Item Master & Units of Measure (Phase 2) ----
+export const listItems = (params?: {
+  item_type?: string;
+  category_id?: number;
+  is_active?: boolean;
+  low_stock?: boolean;
+  q?: string;
+}) => apiClient.get<Item[]>("/api/items", { params });
+export const getItem = (id: number) => apiClient.get<Item>(`/api/items/${id}`);
+export const createItem = (data: Partial<Item>) => apiClient.post<Item>("/api/items", data);
+export const updateItem = (id: number, data: Partial<Item>) =>
+  apiClient.patch<Item>(`/api/items/${id}`, data);
+
+export const listItemConversions = (id: number) =>
+  apiClient.get<ItemUomConversion[]>(`/api/items/${id}/conversions`);
+export const addItemConversion = (
+  id: number,
+  data: { from_uom_id: number; to_uom_id: number; factor: number; vendor_id?: number | null },
+) => apiClient.post<ItemUomConversion>(`/api/items/${id}/conversions`, data);
+
+export const listItemVendors = (id: number) => apiClient.get<VendorItem[]>(`/api/items/${id}/vendors`);
+export const addItemVendor = (id: number, data: Partial<VendorItem>) =>
+  apiClient.post<VendorItem>(`/api/items/${id}/vendors`, data);
+
+export const listUoms = (params?: { category_id?: number; is_active?: boolean }) =>
+  apiClient.get<Uom[]>("/api/uom", { params });
+export const createUom = (data: Partial<Uom>) => apiClient.post<Uom>("/api/uom", data);
+export const updateUom = (id: number, data: Partial<Uom>) => apiClient.patch<Uom>(`/api/uom/${id}`, data);
+export const listUomCategories = () => apiClient.get<UomCategory[]>("/api/uom/categories");
+export const createUomCategory = (data: { code: string; name: string }) =>
+  apiClient.post<UomCategory>("/api/uom/categories", data);
+export const convertUom = (data: {
+  quantity: number;
+  from_uom_id: number;
+  to_uom_id: number;
+  item_id?: number | null;
+  vendor_id?: number | null;
+}) => apiClient.post<{ quantity: number; from_uom: string; to_uom: string }>("/api/uom/convert", data);
+
+// ---- BOM (Phase 3B) ----
+export const listBoms = (params?: { q?: string; item_id?: number; limit?: number; offset?: number }) =>
+  apiClient.get<Bom[]>("/api/boms", { params });
+export const getBom = (id: number) => apiClient.get<BomDetail>(`/api/boms/${id}`);
+export const createBom = (data: {
+  item_id: number;
+  name: string;
+  description?: string | null;
+  output_quantity?: number;
+  output_uom_id?: number | null;
+  components?: unknown[];
+}) => apiClient.post<BomDetail>("/api/boms", data);
+
+export const getBomVersion = (bomId: number, versionId: number) =>
+  apiClient.get<BomVersion>(`/api/boms/${bomId}/versions/${versionId}`);
+export const createBomVersion = (
+  bomId: number,
+  data: { output_quantity?: number; output_uom_id?: number | null; notes?: string | null; copy_from_version_id?: number | null },
+) => apiClient.post<BomVersion>(`/api/boms/${bomId}/versions`, data);
+export const replaceBomComponents = (bomId: number, versionId: number, components: unknown[]) =>
+  apiClient.put<BomVersion>(`/api/boms/${bomId}/versions/${versionId}/components`, { components });
+export const activateBomVersion = (bomId: number, versionId: number) =>
+  apiClient.post<BomVersion>(`/api/boms/${bomId}/versions/${versionId}/activate`);
+export const archiveBomVersion = (bomId: number, versionId: number) =>
+  apiClient.post<BomVersion>(`/api/boms/${bomId}/versions/${versionId}/archive`);
+
+export const getBomCost = (bomId: number, params?: { quantity?: number; version_id?: number }) =>
+  apiClient.get<BomCost>(`/api/boms/${bomId}/cost`, { params });
+export const getBomAvailability = (bomId: number, params?: { quantity?: number; outlet_id?: number; version_id?: number }) =>
+  apiClient.get<BomAvailability>(`/api/boms/${bomId}/availability`, { params });
+export const getBomDuplicates = (bomId: number, params?: { version_id?: number }) =>
+  apiClient.get<BomDuplicateWarning[]>(`/api/boms/${bomId}/duplicates`, { params });
+
+// ---- Production orders (Phase 3C) ----
+export const listProductionOrders = (params?: {
+  status?: string; item_id?: number; location_id?: number; priority?: string; q?: string;
+}) => apiClient.get<ProductionOrder[]>("/api/production-orders", { params });
+export const getProductionOrder = (id: number) =>
+  apiClient.get<ProductionOrderDetail>(`/api/production-orders/${id}`);
+export const createProductionOrder = (data: {
+  item_id: number; planned_quantity: number; location_id: number;
+  bom_version_id?: number | null; planned_start?: string | null;
+  planned_completion?: string | null; priority?: string; notes?: string | null;
+}) => apiClient.post<ProductionOrderDetail>("/api/production-orders", data);
+export const updateProductionOrder = (id: number, data: Record<string, unknown>) =>
+  apiClient.patch<ProductionOrderDetail>(`/api/production-orders/${id}`, data);
+
+export const planProductionOrder = (id: number) =>
+  apiClient.post<ProductionOrderDetail>(`/api/production-orders/${id}/plan`);
+export const releaseProductionOrder = (id: number) =>
+  apiClient.post<ProductionOrderDetail>(`/api/production-orders/${id}/release`);
+export const startProductionOrder = (id: number) =>
+  apiClient.post<ProductionOrderDetail>(`/api/production-orders/${id}/start`);
+export const holdProductionOrder = (id: number, reason?: string) =>
+  apiClient.post<ProductionOrderDetail>(`/api/production-orders/${id}/hold`, { reason });
+export const resumeProductionOrder = (id: number) =>
+  apiClient.post<ProductionOrderDetail>(`/api/production-orders/${id}/resume`);
+export const cancelProductionOrder = (id: number, reason?: string) =>
+  apiClient.post<ProductionOrderDetail>(`/api/production-orders/${id}/cancel`, { reason });
+export const closeShortProductionOrder = (
+  id: number, data: { produced_quantity: number; reason: string },
+) => apiClient.post<ProductionOrderDetail>(`/api/production-orders/${id}/close-short`, data);
+
+export const getProductionAvailability = (id: number) =>
+  apiClient.get<ProductionAvailability>(`/api/production-orders/${id}/availability`);
+export const getProductionHistory = (id: number) =>
+  apiClient.get<ProductionHistoryEntry[]>(`/api/production-orders/${id}/history`);
+export const getProductionTrace = (id: number, itemId: number) =>
+  apiClient.get<ProductionTraceStep[][]>(`/api/production-orders/${id}/trace/${itemId}`);
+
+// ---- Material flow (Phase 3D) ----
+export const getOrderMaterials = (id: number) =>
+  apiClient.get<OrderMaterialSummary>(`/api/production-orders/${id}/materials`);
+export const listReservations = (id: number) =>
+  apiClient.get<MaterialReservation[]>(`/api/production-orders/${id}/reservations`);
+export const listMaterialIssues = (id: number) =>
+  apiClient.get<MaterialTxn[]>(`/api/production-orders/${id}/issues`);
+export const listMaterialConsumption = (id: number) =>
+  apiClient.get<MaterialTxn[]>(`/api/production-orders/${id}/consumption`);
+export const listMaterialReturns = (id: number) =>
+  apiClient.get<MaterialTxn[]>(`/api/production-orders/${id}/returns`);
+
+export const reserveMaterials = (
+  id: number, lines: { material_id: number; quantity: number; note?: string | null }[],
+) => apiClient.post<OrderMaterialSummary>(`/api/production-orders/${id}/reserve`, { lines });
+export const releaseReservations = (
+  id: number, data: { reservation_ids?: number[]; reason?: string | null },
+) => apiClient.post<OrderMaterialSummary>(`/api/production-orders/${id}/release-reservation`, data);
+export const issueMaterials = (
+  id: number,
+  lines: { material_id: number; quantity: number; allow_unreserved?: boolean; unreserved_reason?: string | null; note?: string | null }[],
+) => apiClient.post<OrderMaterialSummary>(`/api/production-orders/${id}/issue`, { lines });
+export const consumeMaterials = (
+  id: number,
+  lines: { material_id: number; quantity: number; allow_over_consumption?: boolean; over_consumption_reason?: string | null }[],
+) => apiClient.post<OrderMaterialSummary>(`/api/production-orders/${id}/consume`, { lines });
+export const returnMaterials = (
+  id: number,
+  lines: { material_id: number; quantity: number; reason?: string | null; restock?: boolean }[],
+) => apiClient.post<OrderMaterialSummary>(`/api/production-orders/${id}/return`, { lines });

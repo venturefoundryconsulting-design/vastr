@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Form, InputNumber, Modal, Select, Space, Table, Tag, Typography, Input, message } from "antd";
 import { useState } from "react";
 import { adjustStock, listOutlets, listStock } from "../api/endpoints";
+import { formatQty, qtyDeltaInputProps } from "../utils/quantity";
 import type { StockLevelDetail } from "../api/types";
 import ExportButton from "../components/ExportButton";
 
@@ -40,7 +41,7 @@ export default function Inventory() {
       title: "Quantity",
       dataIndex: "quantity",
       render: (qty: number, r: StockLevelDetail) => (
-        <Tag color={qty <= r.reorder_level ? "red" : "green"}>{qty}</Tag>
+        <Tag color={qty <= r.reorder_level ? "red" : "green"}>{formatQty(qty)}</Tag>
       ),
     },
     { title: "Reorder level", dataIndex: "reorder_level" },
@@ -103,7 +104,7 @@ export default function Inventory() {
             label="Change (use negative to reduce)"
             rules={[{ required: true }]}
           >
-            <InputNumber style={{ width: "100%" }} />
+            <InputNumber {...qtyDeltaInputProps} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item name="note" label="Reason">
             <Input placeholder="e.g. damaged stock, physical count correction" />

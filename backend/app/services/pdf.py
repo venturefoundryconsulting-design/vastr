@@ -17,6 +17,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from app.core.money import format_quantity as fmt_qty
+from app.core.money import money
 from app.models.outlet import PaperSize
 from app.models.purchase import PurchaseOrder
 from app.models.sale import Sale
@@ -202,10 +204,10 @@ def render_purchase_order_pdf(po: PurchaseOrder, business: AppSettings) -> bytes
     for item in po.items:
         row = [item.variant.sku]
         if show_hsn:
-            row.append(item.variant.product.hsn_code or "-")
+            row.append((item.variant.product.hsn_code if item.variant.product else item.variant.hsn_code) or "-")
         row += [
             item.variant.display_name,
-            str(item.quantity_ordered),
+            fmt_qty(item.quantity_ordered),
             f"{float(item.unit_cost):,.2f}",
             f"{float(item.tax_rate):.1f}",
             f"{item.amount:,.2f}",
@@ -258,13 +260,13 @@ def _render_a4_receipt(sale: Sale, business: AppSettings) -> bytes:
     headers = ["SKU"] + (["HSN"] if show_hsn else []) + ["Item", "Qty", "Unit Price", "Tax %", "Amount"]
     rows = []
     for item in sale.items:
-        amount = float(item.unit_price) * item.quantity * (1 + float(item.tax_rate) / 100)
+        amount = money(item.unit_price * item.quantity * (1 + item.tax_rate / 100))
         row = [item.variant.sku]
         if show_hsn:
-            row.append(item.variant.product.hsn_code or "-")
+            row.append((item.variant.product.hsn_code if item.variant.product else item.variant.hsn_code) or "-")
         row += [
             item.variant.display_name,
-            str(item.quantity),
+            fmt_qty(item.quantity),
             f"{float(item.unit_price):,.2f}",
             f"{float(item.tax_rate):.1f}",
             f"{amount:,.2f}",
@@ -322,10 +324,10 @@ def _render_thermal_receipt(sale: Sale, width_mm: int, business: AppSettings) ->
 
     item_rows = []
     for item in sale.items:
-        amount = float(item.unit_price) * item.quantity
+        amount = money(item.unit_price * item.quantity)
         desc = Paragraph(
             f"{item.variant.display_name}<br/>"
-            f'<font color="#6b7280">{item.quantity} × {float(item.unit_price):,.2f}</font>',
+            f'<font color="#6b7280">{fmt_qty(item.quantity)} × {float(item.unit_price):,.2f}</font>',
             item_name,
         )
         item_rows.append([desc, Paragraph(f"{amount:,.2f}", item_amount)])
@@ -418,9 +420,9 @@ def render_transfer_pdf(transfer: StockTransfer, business: AppSettings) -> bytes
         [
             item.variant.sku,
             item.variant.display_name,
-            str(item.quantity_requested),
-            str(item.quantity_sent),
-            str(item.quantity_received),
+            fmt_qty(item.quantity_requested),
+            fmt_qty(item.quantity_sent),
+            fmt_qty(item.quantity_received),
         ]
         for item in transfer.items
     ]

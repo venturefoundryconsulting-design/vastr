@@ -42,7 +42,7 @@ def get_summary(db: Session = Depends(get_db), _=Depends(get_current_user)):
             LowStockItem(
                 variant_id=level.variant_id,
                 sku=level.variant.sku,
-                product_name=level.variant.product.name,
+                product_name=level.variant.resolved_name,
                 size=level.variant.size,
                 color=level.variant.color,
                 outlet_id=level.outlet_id,

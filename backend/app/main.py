@@ -10,6 +10,14 @@ from app.core.tenant_context import register_tenant_isolation
 from app.middleware.tenant import TenantContextMiddleware
 from app.services.campaign_scheduler import campaign_scheduler_loop
 from app.routers import (
+    mrp,
+    goods_receipts,
+    made_to_order,
+    quality,
+    workforce,
+    material_flow,
+    production_orders,
+    boms,
     admin,
     alterations,
     auth,
@@ -37,6 +45,7 @@ from app.routers import (
     users,
     vendors,
     webhooks,
+    items,
 )
 
 @contextlib.asynccontextmanager
@@ -91,6 +100,16 @@ app.include_router(billing.router)
 app.include_router(platform_settings.router)
 app.include_router(landing.router)
 app.include_router(landing.public_router)
+app.include_router(boms.router)
+app.include_router(production_orders.router)
+app.include_router(material_flow.router)
+app.include_router(workforce.router)
+app.include_router(quality.router)
+app.include_router(made_to_order.router)
+app.include_router(goods_receipts.router)
+app.include_router(mrp.router)
+app.include_router(items.router)
+app.include_router(items.uom_router)
 
 settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")

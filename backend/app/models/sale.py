@@ -1,9 +1,12 @@
 import enum
+from decimal import Decimal
 
 from sqlalchemy import Enum, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.core.money import money, to_decimal
+from app.models.inventory import QuantityType
 from app.models.mixins import TenantMixin, TimestampMixin
 
 
@@ -41,26 +44,28 @@ class Sale(Base, TimestampMixin, TenantMixin):
     items: Mapped[list["SaleItem"]] = relationship(back_populates="sale", cascade="all, delete-orphan")
 
     @property
-    def subtotal(self) -> float:
-        return sum(float(item.unit_price) * item.quantity for item in self.items)
+    def subtotal(self) -> Decimal:
+        return money(sum((item.unit_price * item.quantity for item in self.items), Decimal("0")))
 
     @property
-    def tax_amount(self) -> float:
-        return sum(
-            float(item.unit_price) * item.quantity * float(item.tax_rate) / 100 for item in self.items
+    def tax_amount(self) -> Decimal:
+        return money(
+            sum(
+                (item.unit_price * item.quantity * item.tax_rate / 100 for item in self.items),
+                Decimal("0"),
+            )
         )
 
     @property
-    def total(self) -> float:
+    def total(self) -> Decimal:
         # 1 loyalty point = ₹1 when redeemed.
-        return round(
+        return money(
             self.subtotal
             + self.tax_amount
-            - float(self.discount_amount)
-            - float(self.rule_discount_amount)
-            - float(self.credit_applied)
-            - self.points_redeemed,
-            2,
+            - to_decimal(self.discount_amount)
+            - to_decimal(self.rule_discount_amount)
+            - to_decimal(self.credit_applied)
+            - to_decimal(self.points_redeemed)
         )
 
 
@@ -69,10 +74,10 @@ class SaleItem(Base, TimestampMixin, TenantMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     sale_id: Mapped[int] = mapped_column(ForeignKey("sales.id"))
-    variant_id: Mapped[int] = mapped_column(ForeignKey("product_variants.id"))
-    quantity: Mapped[int] = mapped_column(Integer, default=1)
-    unit_price: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
-    tax_rate: Mapped[float] = mapped_column(Numeric(5, 2), default=0)
+    variant_id: Mapped[int] = mapped_column(ForeignKey("items.id"))
+    quantity: Mapped[Decimal] = mapped_column(QuantityType, default=Decimal("1"))
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=0)
+    tax_rate: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=0)
 
     sale: Mapped["Sale"] = relationship(back_populates="items")
-    variant: Mapped["ProductVariant"] = relationship()  # noqa: F821
+    variant: Mapped["Item"] = relationship()  # noqa: F821

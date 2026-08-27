@@ -43,7 +43,7 @@ def list_stock(
             outlet_id=s.outlet_id,
             quantity=s.quantity,
             sku=s.variant.sku,
-            product_name=s.variant.product.name,
+            product_name=s.variant.resolved_name,
             size=s.variant.size,
             color=s.variant.color,
             outlet_name=s.outlet.name,
@@ -75,7 +75,7 @@ def export_stock(
     rows = [
         {
             "sku": s.variant.sku,
-            "product_name": s.variant.product.name,
+            "product_name": s.variant.resolved_name,
             "size": s.variant.size,
             "color": s.variant.color,
             "outlet": s.outlet.name,

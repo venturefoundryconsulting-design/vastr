@@ -1,15 +1,17 @@
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel
 
 from app.models.sale import PaymentMode
+from app.schemas.fields import Money, Quantity
 
 
 class SaleItemCreate(BaseModel):
     variant_id: int
-    quantity: int
-    unit_price: float
-    tax_rate: float = 0
+    quantity: Quantity
+    unit_price: Money
+    tax_rate: Money = Decimal("0")
 
 
 class SaleItemOut(SaleItemCreate):
@@ -26,7 +28,7 @@ class SaleCreate(BaseModel):
     customer_name: str | None = None
     customer_phone: str | None = None
     customer_email: str | None = None
-    discount_amount: float = 0
+    discount_amount: Money = Decimal("0")
     coupon_code: str | None = None
     redeem_credit_amount: float = 0
     redeem_points: int = 0
@@ -43,17 +45,17 @@ class SaleOut(BaseModel):
     customer_name: str | None = None
     customer_phone: str | None = None
     customer_email: str | None = None
-    discount_amount: float
+    discount_amount: Money
     coupon_code: str | None = None
-    rule_discount_amount: float = 0
+    rule_discount_amount: Money = Decimal("0")
     discount_rule_name: str | None = None
-    credit_applied: float
+    credit_applied: Money
     points_redeemed: int
     loyalty_points_earned: int
     payment_mode: PaymentMode
-    subtotal: float
-    tax_amount: float
-    total: float
+    subtotal: Money
+    tax_amount: Money
+    total: Money
     created_at: datetime
     items: list[SaleItemOut] = []
 
@@ -76,5 +78,5 @@ class BarcodeLookupResult(BaseModel):
     size: str | None = None
     color: str | None = None
     selling_price: float
-    tax_rate: float
-    available_quantity: int
+    tax_rate: Money
+    available_quantity: Quantity

@@ -3,13 +3,14 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from app.models.inventory import MovementType
+from app.schemas.fields import Quantity
 
 
 class StockLevelOut(BaseModel):
     id: int
     variant_id: int
     outlet_id: int
-    quantity: int
+    quantity: Quantity
 
     model_config = {"from_attributes": True}
 
@@ -26,7 +27,7 @@ class StockLevelDetail(StockLevelOut):
 class StockAdjustment(BaseModel):
     variant_id: int
     outlet_id: int
-    quantity_delta: int
+    quantity_delta: Quantity
     note: str | None = None
 
 
@@ -35,7 +36,7 @@ class StockMovementOut(BaseModel):
     variant_id: int
     outlet_id: int
     movement_type: MovementType
-    quantity_delta: int
+    quantity_delta: Quantity
     reference_type: str | None = None
     reference_id: int | None = None
     note: str | None = None
@@ -52,7 +53,7 @@ class LowStockItem(BaseModel):
     color: str | None = None
     outlet_id: int
     outlet_name: str
-    quantity: int
+    quantity: Quantity
     reorder_level: int
     preferred_vendor_id: int | None = None
     preferred_vendor_name: str | None = None

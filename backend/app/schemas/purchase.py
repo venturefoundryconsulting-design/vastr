@@ -1,21 +1,23 @@
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel
 
 from app.models.purchase import PurchaseOrderStatus
+from app.schemas.fields import Money, Quantity
 
 
 class PurchaseOrderItemCreate(BaseModel):
     variant_id: int
-    quantity_ordered: int
-    unit_cost: float
-    tax_rate: float = 0
+    quantity_ordered: Quantity
+    unit_cost: Money
+    tax_rate: Money = Decimal("0")
 
 
 class PurchaseOrderItemOut(PurchaseOrderItemCreate):
     id: int
-    quantity_received: int
-    amount: float
+    quantity_received: Quantity
+    amount: Money
     sku: str | None = None
     product_name: str | None = None
 
@@ -41,7 +43,7 @@ class PurchaseOrderOut(BaseModel):
     order_date: datetime
     expected_date: datetime | None = None
     notes: str | None = None
-    total_amount: float
+    total_amount: Money
     items: list[PurchaseOrderItemOut] = []
 
     model_config = {"from_attributes": True}
@@ -49,7 +51,7 @@ class PurchaseOrderOut(BaseModel):
 
 class GoodsReceiptItem(BaseModel):
     item_id: int
-    quantity_received: int
+    quantity_received: Quantity
 
 
 class GoodsReceiptRequest(BaseModel):
@@ -64,9 +66,9 @@ class ReorderSuggestionItem(BaseModel):
     color: str | None = None
     outlet_id: int
     outlet_name: str
-    current_quantity: int
+    current_quantity: Quantity
     reorder_level: int
-    suggested_quantity: int
+    suggested_quantity: Quantity
     cost_price: float
 
 

@@ -235,7 +235,7 @@ export default function PurchaseOrders() {
                       />
                     </Form.Item>
                     <Form.Item name={[field.name, "quantity_ordered"]} rules={[{ required: true }]}>
-                      <InputNumber placeholder="Qty" style={{ width: 90 }} />
+                      <InputNumber placeholder="Qty" min={0} step={1} style={{ width: 90 }} />
                     </Form.Item>
                     <Form.Item name={[field.name, "unit_cost"]} rules={[{ required: true }]}>
                       <InputNumber placeholder="Unit cost" style={{ width: 110 }} />

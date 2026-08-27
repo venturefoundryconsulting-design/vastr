@@ -37,7 +37,7 @@ def build_reorder_suggestions(
         suggestion_item = ReorderSuggestionItem(
             variant_id=level.variant_id,
             sku=level.variant.sku,
-            product_name=level.variant.product.name,
+            product_name=level.variant.resolved_name,
             size=level.variant.size,
             color=level.variant.color,
             outlet_id=level.outlet_id,

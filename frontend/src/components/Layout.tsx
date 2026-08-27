@@ -54,14 +54,28 @@ const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
       { key: "/sales", icon: <ShoppingOutlined />, label: "Sales" },
       { key: "/returns", icon: <RollbackOutlined />, label: "Returns & Exchanges" },
       { key: "/alterations", icon: <ScissorOutlined />, label: "Tailor & Alterations" },
+      { key: "/customer-orders", icon: <ShoppingOutlined />, label: "Customer Orders" },
+      { key: "/my-work", icon: <ScissorOutlined />, label: "My Work" },
     ],
   },
   {
     group: "Catalog",
     items: [
       { key: "/products", icon: <AppstoreOutlined />, label: "Products" },
+      { key: "/items", icon: <AppstoreOutlined />, label: "Item Master" },
+      { key: "/boms", icon: <AppstoreOutlined />, label: "Bills of Materials", minRole: "manager" },
+      { key: "/production", icon: <AppstoreOutlined />, label: "Production", minRole: "manager" },
+      { key: "/units", icon: <AppstoreOutlined />, label: "Units of Measure", minRole: "manager" },
       { key: "/discounts", icon: <PercentageOutlined />, label: "Discounts & Coupons", minRole: "manager" },
       { key: "/inventory", icon: <AppstoreOutlined />, label: "Inventory" },
+    ],
+  },
+  {
+    group: "Manufacturing",
+    items: [
+      { key: "/tailors", icon: <TeamOutlined />, label: "Tailors", minRole: "manager" },
+      { key: "/work-orders", icon: <ScissorOutlined />, label: "Work Orders", minRole: "manager" },
+      { key: "/mrp", icon: <BarChartOutlined />, label: "Material Planning (MRP)", minRole: "manager" },
     ],
   },
   {
@@ -76,6 +90,7 @@ const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
     items: [
       { key: "/vendors", icon: <TeamOutlined />, label: "Vendors", minRole: "manager" },
       { key: "/purchase-orders", icon: <TruckOutlined />, label: "Purchase Orders", minRole: "manager" },
+      { key: "/goods-receipts", icon: <TruckOutlined />, label: "Goods Receipts", minRole: "manager" },
       { key: "/transfers", icon: <SwapOutlined />, label: "Stock Transfers", minRole: "manager" },
     ],
   },

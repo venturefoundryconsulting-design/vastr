@@ -3,17 +3,18 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from app.models.transfer import TransferStatus
+from app.schemas.fields import Quantity
 
 
 class TransferItemCreate(BaseModel):
     variant_id: int
-    quantity_requested: int
+    quantity_requested: Quantity
 
 
 class TransferItemOut(TransferItemCreate):
     id: int
-    quantity_sent: int
-    quantity_received: int
+    quantity_sent: Quantity
+    quantity_received: Quantity
     sku: str | None = None
     product_name: str | None = None
 
@@ -55,7 +56,7 @@ class TransferOut(BaseModel):
 
 class DispatchItem(BaseModel):
     item_id: int
-    quantity_sent: int
+    quantity_sent: Quantity
 
 
 class DispatchRequest(BaseModel):
@@ -64,7 +65,7 @@ class DispatchRequest(BaseModel):
 
 class ReceiveItem(BaseModel):
     item_id: int
-    quantity_received: int
+    quantity_received: Quantity
 
 
 class ReceiveRequest(BaseModel):

@@ -239,7 +239,7 @@ def search_variants(q: str, db: Session = Depends(get_db), _=Depends(get_current
         results.append(
             VariantWithStock(
                 **VariantOut.model_validate(v).model_dump(),
-                product_name=v.product.name,
+                product_name=v.resolved_name,
                 total_stock=sum(q[0] for q in total),
             )
         )
@@ -267,7 +267,7 @@ def print_labels(payload: LabelPrintRequest, db: Session = Depends(get_db), _=De
             LabelItem(
                 sku=variant.sku,
                 barcode=variant.barcode,
-                product_name=variant.product.name,
+                product_name=variant.resolved_name,
                 size=variant.size,
                 color=variant.color,
                 mrp=float(variant.mrp),

@@ -45,6 +45,7 @@ import {
 } from "../api/endpoints";
 import { useAuth } from "../context/AuthContext";
 import type { BarcodeLookupResult, Customer, DiscountApplyResult, PaymentMode, Sale } from "../api/types";
+import { QTY_MIN, qtyInputProps, roundQty } from "../utils/quantity";
 
 interface CartLine {
   variant_id: number;
@@ -429,10 +430,10 @@ export default function POS() {
                 dataIndex: "quantity",
                 render: (v: number, r: CartLine) => (
                   <InputNumber
-                    min={1}
+                    {...qtyInputProps}
                     max={r.available_quantity}
                     value={v}
-                    onChange={(val) => updateQty(r.variant_id, val || 1)}
+                    onChange={(val) => updateQty(r.variant_id, val ? roundQty(val) : QTY_MIN)}
                   />
                 ),
               },

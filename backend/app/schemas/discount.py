@@ -1,8 +1,10 @@
 from datetime import date
+from decimal import Decimal
 
 from pydantic import BaseModel
 
 from app.models.discount import DiscountScope, DiscountType
+from app.schemas.fields import Money, Quantity
 
 
 class DiscountRuleBase(BaseModel):
@@ -57,9 +59,12 @@ class DiscountRuleOut(DiscountRuleBase):
 
 
 class DiscountCartItem(BaseModel):
+    # Decimal, not float/int: a cart line may now be 2.5 m of fabric, and mixing
+    # float with the Decimal quantities elsewhere raises TypeError rather than
+    # merely losing precision. See app.core.money.
     variant_id: int
-    quantity: int
-    unit_price: float
+    quantity: Quantity
+    unit_price: Money
 
 
 class DiscountApplyRequest(BaseModel):

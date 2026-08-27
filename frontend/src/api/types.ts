@@ -1119,3 +1119,378 @@ export interface TenantSelfUpdate {
   currency?: string;
   country?: string | null;
 }
+
+// ---- Item Master & UoM (Phase 2) ----
+export type ItemType = "raw_material" | "semi_finished" | "finished_product" | "packaging" | "service";
+
+export interface UomCategory {
+  id: number;
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface Uom {
+  id: number;
+  code: string;
+  name: string;
+  symbol?: string | null;
+  category_id: number;
+  category_code?: string | null;
+  factor_to_base: number;
+  is_base: boolean;
+  decimal_precision: number;
+  is_active: boolean;
+}
+
+export interface ItemUomConversion {
+  id: number;
+  item_id: number;
+  from_uom_id: number;
+  to_uom_id: number;
+  from_uom_code?: string | null;
+  to_uom_code?: string | null;
+  factor: number;
+  vendor_id?: number | null;
+  vendor_name?: string | null;
+  is_active: boolean;
+}
+
+export interface VendorItem {
+  id: number;
+  vendor_id: number;
+  vendor_name?: string | null;
+  variant_id: number;
+  vendor_sku?: string | null;
+  cost_price: number;
+  purchase_uom_id?: number | null;
+  purchase_uom_code?: string | null;
+  min_order_qty: number;
+  lead_time_days?: number | null;
+  is_preferred: boolean;
+  is_active: boolean;
+}
+
+export interface Item {
+  id: number;
+  sku: string;
+  name?: string | null;
+  description?: string | null;
+  item_type: ItemType;
+  product_id?: number | null;
+  product_name?: string | null;
+  category_id?: number | null;
+  category_name?: string | null;
+  brand?: string | null;
+  barcode?: string | null;
+  hsn_code?: string | null;
+  tax_rate: number;
+  size?: string | null;
+  color?: string | null;
+  stock_uom_id?: number | null;
+  stock_uom_code?: string | null;
+  purchase_uom_id?: number | null;
+  purchase_uom_code?: string | null;
+  sales_uom_id?: number | null;
+  sales_uom_code?: string | null;
+  cost_price: number;
+  selling_price: number;
+  mrp: number;
+  reorder_level: number;
+  min_stock: number;
+  is_sellable: boolean;
+  is_purchasable: boolean;
+  is_stocked: boolean;
+  notes?: string | null;
+  is_active: boolean;
+  display_name?: string | null;
+  total_stock: number;
+}
+
+// ---- BOM (Phase 3B) ----
+export type BomStatus = "draft" | "active" | "archived";
+
+export interface BomSubstitute {
+  id?: number;
+  item_id: number;
+  priority: number;
+  notes?: string | null;
+  sku?: string | null;
+  name?: string | null;
+}
+
+export interface BomComponent {
+  id?: number;
+  item_id: number;
+  sku?: string | null;
+  name?: string | null;
+  quantity: number;
+  uom_id: number;
+  uom_code?: string | null;
+  scrap_pct: number;
+  gross_quantity?: number;
+  is_optional: boolean;
+  sequence: number;
+  notes?: string | null;
+  substitutes: BomSubstitute[];
+}
+
+export interface BomVersion {
+  id: number;
+  bom_id: number;
+  version_no: number;
+  status: BomStatus;
+  output_quantity: number;
+  output_uom_id?: number | null;
+  output_uom_code?: string | null;
+  effective_from?: string | null;
+  effective_to?: string | null;
+  notes?: string | null;
+  is_locked: boolean;
+  is_editable: boolean;
+  component_count: number;
+  components: BomComponent[];
+}
+
+export interface Bom {
+  id: number;
+  item_id: number;
+  item_sku?: string | null;
+  item_name?: string | null;
+  name: string;
+  description?: string | null;
+  notes?: string | null;
+  is_active: boolean;
+  active_version_no?: number | null;
+  version_count: number;
+}
+
+export interface BomDetail extends Bom {
+  versions: BomVersion[];
+}
+
+export interface BomCostLine {
+  item_id: number;
+  sku: string;
+  name: string;
+  quantity: number;
+  uom_id: number;
+  unit_cost: number;
+  line_cost: number;
+  is_optional: boolean;
+}
+
+export interface BomCost {
+  quantity: number;
+  lines: BomCostLine[];
+  total_cost: number;
+}
+
+export interface BomAvailabilityLine {
+  item_id: number;
+  sku: string;
+  name: string;
+  required: number;
+  uom_id?: number | null;
+  on_hand: number;
+  reserved: number;
+  available: number;
+  shortage: number;
+  suggested_purchase_qty: number;
+  is_available: boolean;
+  is_optional: boolean;
+}
+
+export interface BomAvailability {
+  quantity: number;
+  outlet_id?: number | null;
+  all_available: boolean;
+  lines: BomAvailabilityLine[];
+}
+
+export interface BomDuplicateWarning {
+  item_id: number;
+  uom_id: number;
+  count: number;
+  total_quantity: number;
+  component_ids: number[];
+}
+
+// ---- Production orders (Phase 3C) ----
+export type ProductionStatus =
+  | "draft" | "planned" | "released" | "in_progress"
+  | "partially_completed" | "completed" | "on_hold" | "cancelled" | "closed_short";
+
+export type ProductionPriority = "low" | "normal" | "high" | "urgent";
+export type MaterialAvailabilityStatus = "available" | "partial" | "short" | "not_stocked" | "invalid";
+export type OrderAvailabilityStatus = "ready" | "partial_material" | "material_shortage" | "invalid_material";
+
+export interface ProductionMaterialLine {
+  item_id: number;
+  sku: string;
+  name: string;
+  base_quantity: number;
+  expected_wastage: number;
+  planned_quantity: number;
+  required: number;
+  uom_id?: number | null;
+  uom_code?: string | null;
+  on_hand: number;
+  reserved: number;
+  available: number;
+  shortage: number;
+  suggested_purchase_qty: number;
+  status: MaterialAvailabilityStatus;
+  note?: string | null;
+  is_optional: boolean;
+}
+
+export interface ProductionAvailability {
+  overall: OrderAvailabilityStatus;
+  lines: ProductionMaterialLine[];
+}
+
+export interface ProductionSnapshotLine {
+  id: number;
+  item_id: number;
+  sku?: string | null;
+  name?: string | null;
+  quantity_per_unit: number;
+  base_quantity: number;
+  scrap_pct: number;
+  expected_wastage: number;
+  planned_quantity: number;
+  uom_id: number;
+  uom_code?: string | null;
+  level: number;
+  parent_item_id?: number | null;
+  parent_sku?: string | null;
+  is_optional: boolean;
+  is_subassembly: boolean;
+  sequence: number;
+}
+
+export interface ProductionOrder {
+  id: number;
+  po_number: string;
+  item_id: number;
+  item_sku?: string | null;
+  item_name?: string | null;
+  bom_id?: number | null;
+  bom_version_id?: number | null;
+  bom_version_no?: number | null;
+  planned_quantity: number;
+  produced_quantity: number;
+  cancelled_quantity: number;
+  remaining_quantity: number;
+  uom_id?: number | null;
+  uom_code?: string | null;
+  location_id: number;
+  location_name?: string | null;
+  planned_start?: string | null;
+  planned_completion?: string | null;
+  actual_start?: string | null;
+  actual_completion?: string | null;
+  status: ProductionStatus;
+  priority: ProductionPriority;
+  notes?: string | null;
+  is_editable: boolean;
+  allowed_transitions: ProductionStatus[];
+  material_count: number;
+  released_at?: string | null;
+  close_short_reason?: string | null;
+  closed_short_at?: string | null;
+  created_at?: string | null;
+}
+
+export interface ProductionOrderDetail extends ProductionOrder {
+  materials: ProductionSnapshotLine[];
+  availability?: ProductionAvailability | null;
+}
+
+export interface ProductionHistoryEntry {
+  action: string;
+  user_id?: number | null;
+  created_at: string;
+  details?: Record<string, unknown> | null;
+}
+
+export interface ProductionTraceStep {
+  level: number;
+  parent_sku?: string | null;
+  parent_name?: string | null;
+  quantity_per_unit: number;
+  base_quantity: number;
+  scrap_pct: number;
+  planned_quantity: number;
+}
+
+// ---- Material flow (Phase 3D) ----
+export type ReservationStatus = "active" | "partially_issued" | "consumed" | "released" | "cancelled";
+
+export interface MaterialPosition {
+  material_id: number;
+  item_id: number;
+  sku?: string | null;
+  name?: string | null;
+  uom_id?: number | null;
+  uom_code?: string | null;
+  planned: number;
+  reserved: number;
+  issued: number;
+  consumed: number;
+  returned: number;
+  wasted?: number;
+  remaining_to_reserve: number;
+  remaining_to_issue: number;
+  returnable: number;
+  still_with_production: number;
+  on_hand: number;
+  available: number;
+}
+
+export interface OrderMaterialSummary {
+  production_order_id: number;
+  po_number: string;
+  status: ProductionStatus;
+  lines: MaterialPosition[];
+  fully_reserved: boolean;
+  fully_issued: boolean;
+}
+
+export interface MaterialReservation {
+  id: number;
+  production_order_material_id: number;
+  item_id: number;
+  sku?: string | null;
+  name?: string | null;
+  location_id: number;
+  quantity: number;
+  issued_quantity: number;
+  outstanding: number;
+  uom_id: number;
+  uom_code?: string | null;
+  status: ReservationStatus;
+  note?: string | null;
+  released_at?: string | null;
+  release_reason?: string | null;
+  created_at?: string | null;
+}
+
+export interface MaterialTxn {
+  id: number;
+  production_order_material_id: number;
+  item_id: number;
+  sku?: string | null;
+  name?: string | null;
+  quantity: number;
+  uom_id: number;
+  uom_code?: string | null;
+  stock_movement_id?: number | null;
+  unreserved_reason?: string | null;
+  over_consumption_reason?: string | null;
+  reason?: string | null;
+  restock?: boolean;
+  note?: string | null;
+  created_at?: string | null;
+}

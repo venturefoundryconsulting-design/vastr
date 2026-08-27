@@ -4,13 +4,15 @@ Run with: python -m app.seed
 Safe to re-run - skips creation if the admin user already exists.
 """
 
+from decimal import Decimal
 from datetime import datetime, timezone
 
 from app.core.database import SessionLocal
 from app.core.security import hash_password
 from app.core.tenant_context import register_tenant_isolation, tenant_scope
 from app.models.customer import Customer
-from app.models.inventory import StockLevel
+from app.models.inventory import MovementType, StockLevel
+from app.services.inventory import apply_stock_delta
 from app.models.outlet import Outlet
 from app.models.product import Category, Product, ProductVariant
 from app.models.tenant import SubscriptionPlanName, SubscriptionStatus, Tenant
@@ -162,8 +164,21 @@ def _seed_tanisi_demo_data(db, tenant: Tenant) -> None:
             (product2.variants[0], store1, 3),
             (product2.variants[1], store2, 10),
         ]
+        # Opening balances go through the ledger, not straight onto the cached
+        # level. Writing StockLevel.quantity directly (as this did before Phase
+        # 3A) left stock_movements unable to explain the balance, so replaying
+        # the ledger disagreed with the cache - see migration 078d64dd5db5,
+        # which had to reconstruct exactly these seven numbers after the fact.
         for variant, outlet, qty in stock_seed:
-            db.add(StockLevel(variant_id=variant.id, outlet_id=outlet.id, quantity=qty))
+            apply_stock_delta(
+                db,
+                variant_id=variant.id,
+                outlet_id=outlet.id,
+                quantity_delta=Decimal(str(qty)),
+                movement_type=MovementType.OPENING_STOCK,
+                reference_type="opening_balance",
+                note="Seeded opening balance",
+            )
 
         db.add_all([
             Customer(

@@ -23,6 +23,12 @@
       ],
       "port": 8000,
       "autoPort": false
+    },
+    {
+      "name": "aeroxone-media",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "E:\\Code\\Aerox\\aeroxone-media", "run", "dev"],
+      "port": 3000
     }
   ]
 }

@@ -1,5 +1,8 @@
+from decimal import Decimal
+
 from sqlalchemy.orm import Session
 
+from app.core.money import quantity as q
 from app.models.inventory import MovementType, StockLevel, StockMovement
 
 
@@ -11,7 +14,7 @@ def get_or_create_stock_level(db: Session, variant_id: int, outlet_id: int) -> S
         .first()
     )
     if not level:
-        level = StockLevel(variant_id=variant_id, outlet_id=outlet_id, quantity=0)
+        level = StockLevel(variant_id=variant_id, outlet_id=outlet_id, quantity=Decimal("0"))
         db.add(level)
         db.flush()
     return level
@@ -22,7 +25,7 @@ def apply_stock_delta(
     *,
     variant_id: int,
     outlet_id: int,
-    quantity_delta: int,
+    quantity_delta: Decimal | int | float | str,
     movement_type: MovementType,
     reference_type: str | None = None,
     reference_id: int | None = None,
@@ -33,15 +36,22 @@ def apply_stock_delta(
 
     Positive quantity_delta = stock in, negative = stock out. Callers are
     responsible for committing the surrounding transaction.
+
+    quantity_delta is normalized to 4 dp Decimal on the way in, so callers may
+    still pass plain ints (every pre-manufacturing caller does) without the
+    stored value drifting from what they meant. The ``with_for_update()`` lock
+    taken by get_or_create_stock_level above is what serializes concurrent
+    adjustments to the same variant/outlet - it is deliberately unchanged.
     """
+    delta = q(quantity_delta)
     level = get_or_create_stock_level(db, variant_id, outlet_id)
-    level.quantity += quantity_delta
+    level.quantity = q(level.quantity + delta)
 
     movement = StockMovement(
         variant_id=variant_id,
         outlet_id=outlet_id,
         movement_type=movement_type,
-        quantity_delta=quantity_delta,
+        quantity_delta=delta,
         reference_type=reference_type,
         reference_id=reference_id,
         note=note,

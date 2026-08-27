@@ -21,6 +21,10 @@ class UserRole(str, enum.Enum):
     SALES = "sales"
     INVENTORY = "inventory"
     OUTLET_STAFF = "outlet_staff"
+    # Phase 3F. Deliberately outside the admin>manager>staff rank ladder: a
+    # tailor outranks nobody yet needs write access to their own work orders,
+    # which rank-based checks cannot express. Resolved via has_permission only.
+    TAILOR = "tailor"
     VIEWER = "viewer"
 
 

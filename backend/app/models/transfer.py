@@ -1,9 +1,11 @@
 import enum
+from decimal import Decimal
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.models.inventory import QuantityType
 from app.models.mixins import TenantMixin, TimestampMixin
 
 
@@ -40,10 +42,10 @@ class StockTransferItem(Base, TimestampMixin, TenantMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     transfer_id: Mapped[int] = mapped_column(ForeignKey("stock_transfers.id"))
-    variant_id: Mapped[int] = mapped_column(ForeignKey("product_variants.id"))
-    quantity_requested: Mapped[int] = mapped_column(Integer, default=0)
-    quantity_sent: Mapped[int] = mapped_column(Integer, default=0)
-    quantity_received: Mapped[int] = mapped_column(Integer, default=0)
+    variant_id: Mapped[int] = mapped_column(ForeignKey("items.id"))
+    quantity_requested: Mapped[Decimal] = mapped_column(QuantityType, default=Decimal("0"))
+    quantity_sent: Mapped[Decimal] = mapped_column(QuantityType, default=Decimal("0"))
+    quantity_received: Mapped[Decimal] = mapped_column(QuantityType, default=Decimal("0"))
 
     transfer: Mapped["StockTransfer"] = relationship(back_populates="items")
-    variant: Mapped["ProductVariant"] = relationship()  # noqa: F821
+    variant: Mapped["Item"] = relationship()  # noqa: F821

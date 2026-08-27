@@ -1,9 +1,12 @@
 import enum
+from decimal import Decimal
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import Boolean, Enum, ForeignKey, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.core.money import money
+from app.models.inventory import QuantityType
 from app.models.mixins import TenantMixin, TimestampMixin
 from app.models.sale import PaymentMode
 
@@ -45,20 +48,26 @@ class Return(Base, TimestampMixin, TenantMixin):
     )
 
     @property
-    def returned_value(self) -> float:
-        return sum(
-            float(i.unit_price) * i.quantity * (1 + float(i.tax_rate) / 100) for i in self.return_items
+    def returned_value(self) -> Decimal:
+        return money(
+            sum(
+                (i.unit_price * i.quantity * (1 + i.tax_rate / 100) for i in self.return_items),
+                Decimal("0"),
+            )
         )
 
     @property
-    def exchanged_value(self) -> float:
-        return sum(
-            float(i.unit_price) * i.quantity * (1 + float(i.tax_rate) / 100) for i in self.exchange_items
+    def exchanged_value(self) -> Decimal:
+        return money(
+            sum(
+                (i.unit_price * i.quantity * (1 + i.tax_rate / 100) for i in self.exchange_items),
+                Decimal("0"),
+            )
         )
 
     @property
-    def difference(self) -> float:
-        return round(self.exchanged_value - self.returned_value, 2)
+    def difference(self) -> Decimal:
+        return money(self.exchanged_value - self.returned_value)
 
 
 class ReturnItem(Base, TimestampMixin, TenantMixin):
@@ -69,15 +78,15 @@ class ReturnItem(Base, TimestampMixin, TenantMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     return_id: Mapped[int] = mapped_column(ForeignKey("returns.id"))
     sale_item_id: Mapped[int] = mapped_column(ForeignKey("sale_items.id"))
-    variant_id: Mapped[int] = mapped_column(ForeignKey("product_variants.id"))
-    quantity: Mapped[int] = mapped_column(Integer, default=1)
-    unit_price: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
-    tax_rate: Mapped[float] = mapped_column(Numeric(5, 2), default=0)
+    variant_id: Mapped[int] = mapped_column(ForeignKey("items.id"))
+    quantity: Mapped[Decimal] = mapped_column(QuantityType, default=Decimal("1"))
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=0)
+    tax_rate: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=0)
     # False when the item is damaged/unsellable and should not go back into stock.
     restock: Mapped[bool] = mapped_column(Boolean, default=True)
 
     return_: Mapped["Return"] = relationship(back_populates="return_items")
-    variant: Mapped["ProductVariant"] = relationship()  # noqa: F821
+    variant: Mapped["Item"] = relationship()  # noqa: F821
 
 
 class ExchangeItem(Base, TimestampMixin, TenantMixin):
@@ -87,10 +96,10 @@ class ExchangeItem(Base, TimestampMixin, TenantMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     return_id: Mapped[int] = mapped_column(ForeignKey("returns.id"))
-    variant_id: Mapped[int] = mapped_column(ForeignKey("product_variants.id"))
-    quantity: Mapped[int] = mapped_column(Integer, default=1)
-    unit_price: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
-    tax_rate: Mapped[float] = mapped_column(Numeric(5, 2), default=0)
+    variant_id: Mapped[int] = mapped_column(ForeignKey("items.id"))
+    quantity: Mapped[Decimal] = mapped_column(QuantityType, default=Decimal("1"))
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=0)
+    tax_rate: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=0)
 
     return_: Mapped["Return"] = relationship(back_populates="exchange_items")
-    variant: Mapped["ProductVariant"] = relationship()  # noqa: F821
+    variant: Mapped["Item"] = relationship()  # noqa: F821

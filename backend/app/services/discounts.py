@@ -1,7 +1,9 @@
 from datetime import date
+from decimal import Decimal
 
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.money import money, to_decimal
 from app.models.customer import Customer
 from app.models.discount import DiscountRule, DiscountScope, DiscountType
 from app.models.product import ProductVariant
@@ -10,7 +12,7 @@ from app.schemas.discount import DiscountApplyResult, DiscountCartItem
 
 def _matching_lines(
     rule: DiscountRule, items: list[DiscountCartItem], variants: dict[int, ProductVariant]
-) -> list[tuple[float, int]]:
+) -> list[tuple[Decimal, Decimal]]:
     """Cart lines (unit_price, quantity) that fall under this rule's scope."""
     matched = []
     for item in items:
@@ -36,31 +38,34 @@ def _matching_lines(
     return matched
 
 
-def _compute_amount(rule: DiscountRule, matching: list[tuple[float, int]]) -> float:
-    matching_subtotal = sum(price * qty for price, qty in matching)
+def _compute_amount(rule: DiscountRule, matching: list[tuple[Decimal, Decimal]]) -> Decimal:
+    matching_subtotal = sum((price * qty for price, qty in matching), Decimal("0"))
     if matching_subtotal <= 0:
-        return 0.0
+        return Decimal("0.00")
 
     if rule.discount_type == DiscountType.PERCENTAGE:
-        amount = matching_subtotal * float(rule.value) / 100
+        amount = matching_subtotal * to_decimal(rule.value) / 100
     elif rule.discount_type == DiscountType.FLAT:
-        amount = float(rule.value)
+        amount = to_decimal(rule.value)
     else:  # BOGO
         if not rule.buy_quantity or not rule.get_quantity:
-            return 0.0
+            return Decimal("0.00")
         group_size = rule.buy_quantity + rule.get_quantity
-        total_qty = sum(qty for _, qty in matching)
+        # BOGO is a whole-unit promotion: "buy 2 get 1 free" has no meaning for
+        # 2.5 m of fabric, so fractional parts are floored out of the count rather
+        # than granting a partial free unit. buy/get_quantity stay Integer on the
+        # rule for the same reason.
+        whole_units = [(price, int(qty)) for price, qty in matching if int(qty) > 0]
+        total_qty = sum(qty for _, qty in whole_units)
         free_units = (total_qty // group_size) * rule.get_quantity
         if free_units <= 0:
-            return 0.0
-        unit_prices = sorted(
-            (price for price, qty in matching for _ in range(qty))
-        )
-        amount = sum(unit_prices[:free_units])
+            return Decimal("0.00")
+        unit_prices = sorted(price for price, qty in whole_units for _ in range(qty))
+        amount = sum(unit_prices[:free_units], Decimal("0"))
 
     if rule.max_discount_amount is not None:
-        amount = min(amount, float(rule.max_discount_amount))
-    return round(min(amount, matching_subtotal), 2)
+        amount = min(amount, to_decimal(rule.max_discount_amount))
+    return money(min(amount, matching_subtotal))
 
 
 def _is_eligible(
@@ -80,8 +85,8 @@ def _is_eligible(
         return "This discount has reached its usage limit"
     if rule.vip_only and not (customer and customer.is_vip):
         return "This discount is only available to VIP customers"
-    cart_subtotal = sum(i.unit_price * i.quantity for i in items)
-    if cart_subtotal < float(rule.min_purchase_amount):
+    cart_subtotal = sum((i.unit_price * i.quantity for i in items), Decimal("0"))
+    if cart_subtotal < to_decimal(rule.min_purchase_amount):
         return f"Minimum purchase of ₹{float(rule.min_purchase_amount):.2f} required"
     return None
 

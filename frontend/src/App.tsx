@@ -21,6 +21,19 @@ import Payroll from "./pages/Payroll";
 import PurchaseOrderDetail from "./pages/PurchaseOrderDetail";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import POS from "./pages/POS";
+import BomBuilder from "./pages/BomBuilder";
+import Boms from "./pages/Boms";
+import ProductionOrderDetail from "./pages/ProductionOrderDetail";
+import ProductionOrders from "./pages/ProductionOrders";
+import Tailors from "./pages/Tailors";
+import WorkOrders from "./pages/WorkOrders";
+import MyWork from "./pages/MyWork";
+import CustomerOrders from "./pages/CustomerOrders";
+import CustomerOrderDetail from "./pages/CustomerOrderDetail";
+import GoodsReceipts from "./pages/GoodsReceipts";
+import Mrp from "./pages/Mrp";
+import Items from "./pages/Items";
+import Units from "./pages/Units";
 import Products from "./pages/Products";
 import Reports from "./pages/Reports";
 import Returns from "./pages/Returns";
@@ -116,6 +129,19 @@ export default function App() {
       <Route path="/customers" element={<Protected><Customers /></Protected>} />
       <Route path="/campaigns" element={<Protected minRole="manager"><Campaigns /></Protected>} />
       <Route path="/products" element={<Protected><Products /></Protected>} />
+      <Route path="/items" element={<Protected><Items /></Protected>} />
+      <Route path="/boms" element={<Protected><Boms /></Protected>} />
+      <Route path="/boms/:id" element={<Protected><BomBuilder /></Protected>} />
+      <Route path="/production" element={<Protected minRole="manager"><ProductionOrders /></Protected>} />
+      <Route path="/production/:id" element={<Protected minRole="manager"><ProductionOrderDetail /></Protected>} />
+      <Route path="/tailors" element={<Protected minRole="manager"><Tailors /></Protected>} />
+      <Route path="/work-orders" element={<Protected minRole="manager"><WorkOrders /></Protected>} />
+      <Route path="/my-work" element={<Protected><MyWork /></Protected>} />
+      <Route path="/customer-orders" element={<Protected><CustomerOrders /></Protected>} />
+      <Route path="/customer-orders/:id" element={<Protected><CustomerOrderDetail /></Protected>} />
+      <Route path="/goods-receipts" element={<Protected minRole="manager"><GoodsReceipts /></Protected>} />
+      <Route path="/mrp" element={<Protected minRole="manager"><Mrp /></Protected>} />
+      <Route path="/units" element={<Protected minRole="manager"><Units /></Protected>} />
       <Route path="/discounts" element={<Protected minRole="manager"><Discounts /></Protected>} />
       <Route path="/inventory" element={<Protected><Inventory /></Protected>} />
       <Route path="/reports" element={<Protected minRole="manager"><Reports /></Protected>} />

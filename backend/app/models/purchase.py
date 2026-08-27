@@ -1,9 +1,12 @@
 import enum
+from decimal import Decimal
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.core.money import money
+from app.models.inventory import QuantityType
 from app.models.mixins import TenantMixin, TimestampMixin
 
 
@@ -39,8 +42,8 @@ class PurchaseOrder(Base, TimestampMixin, TenantMixin):
     )
 
     @property
-    def total_amount(self) -> float:
-        return sum(item.amount for item in self.items)
+    def total_amount(self) -> Decimal:
+        return money(sum((item.amount for item in self.items), Decimal("0")))
 
 
 class PurchaseOrderItem(Base, TimestampMixin, TenantMixin):
@@ -48,16 +51,16 @@ class PurchaseOrderItem(Base, TimestampMixin, TenantMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     purchase_order_id: Mapped[int] = mapped_column(ForeignKey("purchase_orders.id"))
-    variant_id: Mapped[int] = mapped_column(ForeignKey("product_variants.id"))
-    quantity_ordered: Mapped[int] = mapped_column(Integer, default=0)
-    quantity_received: Mapped[int] = mapped_column(Integer, default=0)
-    unit_cost: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
-    tax_rate: Mapped[float] = mapped_column(Numeric(5, 2), default=0)
+    variant_id: Mapped[int] = mapped_column(ForeignKey("items.id"))
+    quantity_ordered: Mapped[Decimal] = mapped_column(QuantityType, default=Decimal("0"))
+    quantity_received: Mapped[Decimal] = mapped_column(QuantityType, default=Decimal("0"))
+    unit_cost: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=0)
+    tax_rate: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=0)
 
     purchase_order: Mapped["PurchaseOrder"] = relationship(back_populates="items")
-    variant: Mapped["ProductVariant"] = relationship()  # noqa: F821
+    variant: Mapped["Item"] = relationship()  # noqa: F821
 
     @property
-    def amount(self) -> float:
-        base = float(self.unit_cost) * self.quantity_ordered
-        return round(base * (1 + float(self.tax_rate) / 100), 2)
+    def amount(self) -> Decimal:
+        base = self.unit_cost * self.quantity_ordered
+        return money(base * (1 + self.tax_rate / 100))

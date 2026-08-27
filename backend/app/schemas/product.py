@@ -1,8 +1,10 @@
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel
 
 from app.models.product import ImageAngle
+from app.schemas.fields import Quantity
 
 
 class CategoryBase(BaseModel):
@@ -57,7 +59,7 @@ class VariantOut(VariantBase):
 
 class VariantWithStock(VariantOut):
     product_name: str
-    total_stock: int = 0
+    total_stock: Quantity = Decimal("0")
 
 
 class ProductBase(BaseModel):

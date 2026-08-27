@@ -114,7 +114,7 @@ export default function Transfers() {
                       />
                     </Form.Item>
                     <Form.Item name={[field.name, "quantity_requested"]} rules={[{ required: true }]}>
-                      <InputNumber placeholder="Qty" style={{ width: 100 }} />
+                      <InputNumber placeholder="Qty" min={0} step={1} style={{ width: 100 }} />
                     </Form.Item>
                     {fields.length > 1 && (
                       <Button danger onClick={() => remove(field.name)}>

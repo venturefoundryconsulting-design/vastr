@@ -5,6 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_current_user, get_db, require_manager_up
+from app.core.money import money, to_decimal
 from app.models.inventory import MovementType, StockLevel, StockMovement
 from app.models.outlet import Outlet
 from app.models.product import Product, ProductVariant
@@ -58,7 +59,9 @@ def _stock_with_last_sale(db: Session, outlet_id: int | None) -> list[StockAging
     for stock, variant, product, outlet, last_sold_at in query.all():
         reference = last_sold_at or variant.created_at
         days = (now - reference).days if reference else 0
-        cost_price = float(variant.cost_price)
+        # Decimal, not float: stock.quantity is Decimal now and float * Decimal
+        # raises TypeError (see app.core.money).
+        cost_price = to_decimal(variant.cost_price)
         items.append(
             StockAgingItem(
                 variant_id=variant.id,
@@ -71,7 +74,7 @@ def _stock_with_last_sale(db: Session, outlet_id: int | None) -> list[StockAging
                 outlet_name=outlet.name,
                 quantity=stock.quantity,
                 cost_price=cost_price,
-                stock_value=round(cost_price * stock.quantity, 2),
+                stock_value=money(cost_price * stock.quantity),
                 last_sold_at=last_sold_at,
                 days_since_last_sale=max(days, 0),
             )

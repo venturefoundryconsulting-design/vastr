@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel
+from app.schemas.fields import Money, Quantity
 
 
 class SalesTrendPoint(BaseModel):
@@ -24,8 +25,8 @@ class StockAgingItem(BaseModel):
     size: str | None = None
     outlet_id: int
     outlet_name: str
-    quantity: int
-    cost_price: float
-    stock_value: float
+    quantity: Quantity
+    cost_price: Money
+    stock_value: Money
     last_sold_at: datetime | None = None
     days_since_last_sale: int

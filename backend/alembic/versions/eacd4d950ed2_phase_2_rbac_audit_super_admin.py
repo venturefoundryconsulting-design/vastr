@@ -90,10 +90,27 @@ def upgrade() -> None:
         )
         code_to_id[code] = result.scalar_one()
 
+    # This migration imports ROLE_GRANTS from live application code, so roles
+    # added to the Python enum *later* (TAILOR in Phase 3F) show up here even
+    # though the database enum does not learn about them until a much later
+    # migration. On a fresh database that produced:
+    #     invalid input value for enum userrole: "TAILOR"
+    # Filter to the labels the type actually has at this point in the chain;
+    # later migrations grant the newer roles their own permissions.
+    existing_roles = {
+        r[0]
+        for r in bind.execute(
+            sa.text(
+                "SELECT enumlabel FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid "
+                "WHERE t.typname = 'userrole'"
+            )
+        ).fetchall()
+    }
     grant_rows = [
         {"role": role.value.upper(), "permission_id": code_to_id[code]}
         for role, codes in ROLE_GRANTS.items()
         for code in codes
+        if role.value.upper() in existing_roles
     ]
     if grant_rows:
         bind.execute(role_permissions_t.insert(), grant_rows)
